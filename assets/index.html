@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Chess</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ─────────────────────────────────────────────── icon sprite ─── -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-bot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 3v5"/><circle cx="12" cy="2.6" r="1.4"/><circle cx="9" cy="13.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="13.5" r="1.3" fill="currentColor" stroke="none"/><path d="M9.5 17h5"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 5.2A3.2 3.2 0 0 1 16 11"/><path d="M18 20c0-2.6-1-4.3-2.6-5.2"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-4 12.8V17h8v-2.2A7 7 0 0 0 12 2z"/><path d="M9.5 20h5"/><path d="M10.5 22.5h3"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21V3.5"/><path d="M5.5 4h12l-2.4 4.2L17.5 13h-12z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a2 2 0 0 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-flip" viewBox="0 0 24 24"><path d="M7 4l-3 3 3 3"/><path d="M4 7h10a6 6 0 0 1 6 6"/><path d="M17 20l3-3-3-3"/><path d="M20 17H10a6 6 0 0 1-6-6"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.5l3.5 2"/></symbol>
+  <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M10 4a2 2 0 1 1 4 0v1h3a1 1 0 0 1 1 1v3h1a2 2 0 1 1 0 4h-1v3a1 1 0 0 1-1 1h-3v1a2 2 0 1 1-4 0v-1H7a1 1 0 0 1-1-1v-3H5a2 2 0 1 1 0-4h1V6a1 1 0 0 1 1-1h3z"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 6-2 7-2 7h16s-2-1-2-7"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 15a3 3 0 0 1-3 3H8l-4 3V6a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/><path d="M8.5 9.5h7M8.5 13h4.5"/></symbol>
+  <symbol id="i-paint" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.6-1.4-.3-.4-.4-.8-.4-1.1 0-.8.7-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-3.9-4-7-9-7z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor" stroke="none"/><circle cx="11" cy="7.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a4 4 0 0 0 5.7.3l3-3A4 4 0 0 0 13 4.7l-1.7 1.7"/><path d="M14 11a4 4 0 0 0-5.7-.3l-3 3A4 4 0 0 0 11 19.3l1.7-1.7"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.4 10.8l7.2-4.2M8.4 13.2l7.2 4.2"/></symbol>
+  <symbol id="i-first" viewBox="0 0 24 24"><path d="M17 5l-7 7 7 7"/><path d="M7 5v14"/></symbol>
+  <symbol id="i-last" viewBox="0 0 24 24"><path d="M7 5l7 7-7 7"/><path d="M17 5v14"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5A2.5 2.5 0 0 0 7 10.5M17 6h2.5A2.5 2.5 0 0 1 17 10.5"/><path d="M10 14h4l.6 4h-5.2z"/><path d="M8 20h8"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="8" r="4"/><path d="M11 11l9 9M17 17l2-2M14 14l2-2"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5A2.5 2.5 0 0 1 4 20.5z"/></symbol>
+</defs></svg>
+
+<!-- ═══════════════════════════════════════════════════════ HOME ═══ -->
+<section class="screen active" id="screen-home">
+  <div class="scroll home-scroll">
+
+    <!-- identity -->
+    <div class="me-bar">
+      <button class="me-id" data-go="profile">
+        <span class="avatar avatar-md" id="corner-avatar">P</span>
+        <span class="me-text">
+          <span class="me-name" id="me-name">Player</span>
+          <span class="me-sub"><b id="me-rating">1200</b><i id="me-tier">Casual</i></span>
+        </span>
+      </button>
+      <button class="icon-btn" data-go="settings" aria-label="Settings"><svg class="ic"><use href="#i-gear"/></svg></button>
+    </div>
+
+    <!-- resume -->
+    <button class="resume-card" id="resume-card" data-action="resume" hidden>
+      <span class="rc-left">
+        <span class="rc-kicker">Continue game</span>
+        <span class="rc-title" id="resume-title">vs Bot</span>
+        <span class="rc-sub" id="resume-sub">Move 1</span>
+      </span>
+      <span class="rc-go"><svg class="ic"><use href="#i-play"/></svg></span>
+    </button>
+
+    <!-- primary modes -->
+    <div class="mode-grid">
+      <button class="mode-card mc-bots" data-go="bots">
+        <span class="mc-ico"><svg class="ic"><use href="#i-bot"/></svg></span>
+        <span class="mc-title">Play Bots</span>
+        <span class="mc-sub">32 characters</span>
+      </button>
+      <button class="mode-card mc-online" data-action="open-online">
+        <span class="mc-ico"><svg class="ic"><use href="#i-globe"/></svg></span>
+        <span class="mc-title">Play Online</span>
+        <span class="mc-sub">Random opponent</span>
+      </button>
+      <button class="mode-card mc-friends" data-action="open-friends">
+        <span class="mc-ico"><svg class="ic"><use href="#i-link"/></svg></span>
+        <span class="mc-title">Friends</span>
+        <span class="mc-sub">Invite by code</span>
+      </button>
+      <button class="mode-card mc-local" data-action="play-local">
+        <span class="mc-ico"><svg class="ic"><use href="#i-users"/></svg></span>
+        <span class="mc-title">Pass &amp; Play</span>
+        <span class="mc-sub">Same device</span>
+      </button>
+    </div>
+
+    <!-- train -->
+    <div class="section-label">Train</div>
+    <div class="train-row">
+      <button class="train-card" data-go="puzzles">
+        <svg class="ic ic-lg"><use href="#i-puzzle"/></svg>
+        <span class="tc-title">Puzzles</span>
+        <span class="tc-sub" id="puz-sub">140 tactics</span>
+      </button>
+      <button class="train-card" data-go="practice">
+        <svg class="ic ic-lg"><use href="#i-target"/></svg>
+        <span class="tc-title">Practice</span>
+        <span class="tc-sub">12 endgames</span>
+      </button>
+      <button class="train-card" data-action="open-archive">
+        <svg class="ic ic-lg"><use href="#i-chart"/></svg>
+        <span class="tc-title">My Games</span>
+        <span class="tc-sub" id="arch-sub">Review</span>
+      </button>
+    </div>
+
+    <!-- quick match -->
+    <div class="section-label row-label">
+      <span>Quick match</span>
+      <button class="link-btn" data-go="bots">See all</button>
+    </div>
+    <div class="quick-row" id="quick-bots"></div>
+
+    <!-- record -->
+    <div class="section-label">Your record</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-val" id="hm-w">0</div><div class="stat-key">Wins</div></div>
+      <div class="stat"><div class="stat-val" id="hm-l">0</div><div class="stat-key">Losses</div></div>
+      <div class="stat"><div class="stat-val" id="hm-d">0</div><div class="stat-key">Draws</div></div>
+      <div class="stat"><div class="stat-val" id="hm-b">–</div><div class="stat-key">Best win</div></div>
+    </div>
+
+    <div class="home-foot">Chess · v1.4</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ BOT GRID ═══ -->
+<section class="screen" id="screen-bots">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Choose an Opponent</div>
+    <div class="icon-btn ghost"></div>
+  </header>
+  <div class="scroll"><div class="bot-grid" id="bot-grid"></div></div>
+</section>
+
+<!-- ════════════════════════════════════════════════════ PROFILE ═══ -->
+<section class="screen" id="screen-profile">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Your Profile</div>
+    <div class="icon-btn ghost"></div>
+  </header>
+  <div class="scroll">
+    <div class="center-avatar"><div class="avatar avatar-xl" id="prof-avatar">P</div></div>
+    <label class="field-label" for="name-input">Display name</label>
+    <input class="text-input" id="name-input" maxlength="18" placeholder="Player" autocomplete="off">
+    <label class="field-label">Avatar colour</label>
+    <div class="swatch-row" id="avatar-colors"></div>
+    <div class="section-label">Statistics</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-val" id="st-w">0</div><div class="stat-key">Wins</div></div>
+      <div class="stat"><div class="stat-val" id="st-l">0</div><div class="stat-key">Losses</div></div>
+      <div class="stat"><div class="stat-val" id="st-d">0</div><div class="stat-key">Draws</div></div>
+      <div class="stat"><div class="stat-val" id="st-best">–</div><div class="stat-key">Best win</div></div>
+    </div>
+    <button class="btn btn-ghost danger" data-action="reset-stats">Reset statistics</button>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SETTINGS ═══ -->
+<section class="screen" id="screen-settings">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Themes &amp; Settings</div>
+    <div class="icon-btn ghost"></div>
+  </header>
+  <div class="scroll">
+    <div class="section-label">Preset themes</div>
+    <div class="preset-grid" id="preset-grid"></div>
+
+    <div class="section-label">Custom</div>
+    <div class="row-list">
+      <button class="nav-row" data-go="pick-board">
+        <span class="nav-label">Board</span>
+        <span class="nav-value" id="v-board">Green</span>
+        <svg class="ic chev-ic"><use href="#i-next"/></svg>
+      </button>
+      <button class="nav-row" data-go="pick-pieces">
+        <span class="nav-label">Pieces</span>
+        <span class="nav-value" id="v-piece">Classic</span>
+        <svg class="ic chev-ic"><use href="#i-next"/></svg>
+      </button>
+      <button class="nav-row" data-go="pick-bg">
+        <span class="nav-label">Background</span>
+        <span class="nav-value" id="v-bg">Classic</span>
+        <svg class="ic chev-ic"><use href="#i-next"/></svg>
+      </button>
+      <button class="nav-row" data-go="pick-sound">
+        <span class="nav-label">Sound</span>
+        <span class="nav-value" id="v-sound">Default</span>
+        <svg class="ic chev-ic"><use href="#i-next"/></svg>
+      </button>
+    </div>
+
+    <div class="toggle-list">
+      <label class="toggle-row"><span>Move animation</span><input type="checkbox" id="opt-anim" checked><i></i></label>
+      <label class="toggle-row"><span>Board coordinates</span><input type="checkbox" id="opt-coords" checked><i></i></label>
+      <label class="toggle-row"><span>Show legal moves</span><input type="checkbox" id="opt-hints" checked><i></i></label>
+      <label class="toggle-row"><span>Highlight last move</span><input type="checkbox" id="opt-last" checked><i></i></label>
+      <label class="toggle-row"><span>Auto-queen promotion</span><input type="checkbox" id="opt-autoq"><i></i></label>
+    </div>
+
+    <div class="section-label">AI bot chat</div>
+    <div class="toggle-list" style="margin-top:0">
+      <label class="toggle-row"><span>Bots chat while playing</span><input type="checkbox" id="opt-chat" checked><i></i></label>
+    </div>
+    <label class="field-label" for="groq-key">Groq API key</label>
+    <input class="text-input" id="groq-key" type="password" placeholder="gsk_…" autocomplete="off" spellcheck="false">
+    <div class="hint-line">Stored on this device only, never sent anywhere except Groq. Model <b>openai/gpt-oss-120b</b>. Without a key the bots still chat using built-in lines.</div>
+    <button class="btn btn-ghost" id="test-key">Test connection</button>
+
+    <div class="section-label">Online</div>
+    <label class="field-label" for="srv-url">Relay server URL</label>
+    <input class="text-input" id="srv-url" type="url" placeholder="wss://your-relay.onrender.com"
+           autocomplete="off" spellcheck="false" inputmode="url">
+    <div class="hint-line">Needed for <b>Play Online</b> and <b>Friends</b>. The server code ships with this app in <code>/server</code> &mdash; deploy it free on Render or Fly, then paste the address here. <code>https://</code> is converted to <code>wss://</code> automatically.</div>
+    <button class="btn btn-ghost" id="test-srv">Test connection</button>
+    <div class="hint-line" id="srv-status"></div>
+
+    <div class="section-label">Daily reminders</div>
+    <div class="toggle-list" style="margin-top:0">
+      <label class="toggle-row"><span>Daily notification</span><input type="checkbox" id="opt-notify"><i></i></label>
+    </div>
+    <label class="field-label" for="notify-time">Remind me at</label>
+    <input class="text-input" id="notify-time" type="time" value="19:00">
+    <div class="hint-line">A bot picks a line in character and nudges you to play a game or solve a puzzle. Works offline.</div>
+    <button class="btn btn-ghost" id="test-notify">Send a test notification</button>
+
+    <div class="section-label">Owner &amp; credits</div>
+    <div class="credits">
+      <a class="credit-row" href="https://t.me/TechnicalSerena">
+        <span class="credit-av">S</span>
+        <span class="credit-meta"><span class="credit-name">Technical Serena</span><span class="credit-sub">Owner &amp; creator</span></span>
+        <span class="credit-link">@TechnicalSerena</span>
+      </a>
+      <a class="credit-row" href="https://t.me/XioquiXin">
+        <span class="credit-av">X</span>
+        <span class="credit-meta"><span class="credit-name">Xioqui Xin</span><span class="credit-sub">Owner</span></span>
+        <span class="credit-link">@XioquiXin</span>
+      </a>
+    </div>
+
+    <div class="about">
+      <div class="about-title">Chess 1.1</div>
+      <div class="about-line">com.serena.chess · the game plays fully offline; only bot chat uses the internet.</div>
+      <div class="about-line">Piece artwork from open-source Lichess sets (CC BY-SA). Sound themes synthesised; the Default pack is your own upload. Bot chat by Groq.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ THEME  PICKERS ═══ -->
+<section class="screen" id="screen-pick-board">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Board Style</div><div class="icon-btn ghost"></div>
+  </header>
+  <div class="scroll"><div class="theme-grid" id="board-grid"></div></div>
+</section>
+
+<section class="screen" id="screen-pick-pieces">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Piece Set</div><div class="icon-btn ghost"></div>
+  </header>
+  <div class="scroll"><div class="piece-grid" id="piece-grid"></div></div>
+</section>
+
+<section class="screen" id="screen-pick-bg">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Background</div><div class="icon-btn ghost"></div>
+  </header>
+  <div class="scroll"><div class="theme-grid" id="bg-grid"></div></div>
+</section>
+
+<section class="screen" id="screen-pick-sound">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Sound Theme</div><div class="icon-btn ghost"></div>
+  </header>
+  <div class="scroll">
+    <div class="row-list" id="sound-list"></div>
+    <div class="section-label">Test the current theme</div>
+    <div class="sound-test" id="sound-test"></div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════ PUZZLES ═══ -->
+<section class="screen" id="screen-puzzles">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Puzzles</div>
+    <button class="icon-btn" data-action="puzzle-skip" aria-label="Next"><svg class="ic"><use href="#i-next"/></svg></button>
+  </header>
+  <div class="game-wrap">
+    <div class="play-area">
+      <div class="puz-head">
+        <div class="puz-meta">
+          <div class="puz-theme" id="puz-theme">Mate in 2</div>
+          <div class="puz-turn" id="puz-turn">White to play</div>
+        </div>
+        <div class="elo-pill" id="puz-rating">1200</div>
+      </div>
+      <div class="board-holder">
+        <div class="board" id="puzzle-board"></div>
+        <svg class="arrow-layer" id="puzzle-arrow" viewBox="0 0 100 100" preserveAspectRatio="none" hidden></svg>
+      </div>
+      <div class="puz-status" id="puz-status">Find the best move.</div>
+    </div>
+    <div class="puz-progress">
+      <span id="puz-count">Puzzle 1 of 140</span>
+      <span id="puz-solved">Solved 0</span>
+    </div>
+    <div class="game-bar">
+      <button class="gb" data-action="puzzle-hint"><svg class="ic"><use href="#i-bulb"/></svg>Hint</button>
+      <button class="gb" data-action="puzzle-solution"><svg class="ic"><use href="#i-target"/></svg>Solution</button>
+      <button class="gb" data-action="puzzle-retry"><svg class="ic"><use href="#i-undo"/></svg>Retry</button>
+      <button class="gb" data-action="puzzle-skip"><svg class="ic"><use href="#i-next"/></svg>Next</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ PRACTICE ═══ -->
+<section class="screen" id="screen-practice">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Practice</div>
+    <div class="icon-btn ghost"></div>
+  </header>
+  <div class="scroll">
+    <div class="hint-line" style="margin-top:0">Play these positions out against a strong engine. You move first.</div>
+    <div class="row-list" id="drill-list"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ GAME ═══ -->
+<section class="screen" id="screen-game">
+  <header class="app-bar">
+    <button class="icon-btn" data-action="leave-game"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title" id="game-title">Game</div>
+    <button class="icon-btn" data-action="flip"><svg class="ic"><use href="#i-flip"/></svg></button>
+  </header>
+
+  <div class="game-wrap">
+    <div class="play-area">
+      <div class="player-strip" id="strip-top">
+        <div class="avatar" id="top-avatar">?</div>
+        <div class="player-meta">
+          <div class="player-name" id="top-name">Opponent</div>
+          <div class="captured" id="top-captured"></div>
+        </div>
+        <div class="thinking" id="top-thinking" hidden><i></i><i></i><i></i></div>
+        <div class="clock" id="top-clock" hidden>10:00</div>
+      </div>
+
+      <div class="bot-say" id="bot-say" hidden>
+        <span class="bs-name" id="bs-name">BOT</span>
+        <span class="bs-text" id="bs-text"></span>
+      </div>
+
+      <div class="board-holder">
+        <div class="board" id="board"></div>
+        <svg class="arrow-layer" id="arrow-layer" viewBox="0 0 100 100" preserveAspectRatio="none" hidden></svg>
+        <div class="board-overlay" id="board-overlay" hidden>
+          <div class="overlay-card">
+            <div class="overlay-icon" id="ov-icon">♚</div>
+            <div class="overlay-title" id="ov-title">Game over</div>
+            <div class="overlay-sub" id="ov-sub"></div>
+            <div class="overlay-actions">
+              <button class="btn btn-primary" data-action="rematch">Rematch</button>
+              <button class="btn btn-accent" data-action="review">Game Review</button>
+              <button class="btn btn-ghost" data-action="leave-game">Exit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="player-strip" id="strip-bottom">
+        <div class="avatar" id="bot-avatar">P</div>
+        <div class="player-meta">
+          <div class="player-name" id="bot-name">You</div>
+          <div class="captured" id="bot-captured"></div>
+        </div>
+        <div class="thinking" id="bot-thinking" hidden><i></i><i></i><i></i></div>
+        <div class="clock" id="bot-clock" hidden>10:00</div>
+      </div>
+    </div>
+
+    <div class="evalbar" id="evalbar" hidden>
+      <i id="eval-fill"></i>
+      <span class="eval-num" id="eval-num">0.0</span>
+    </div>
+
+    <div class="browse-pill" id="browse-pill" hidden>
+      <svg class="ic"><use href="#i-clock"/></svg>
+      <span id="browse-text">Reviewing move 1</span>
+      <button class="bp-live" data-nav="last">Live</button>
+    </div>
+
+    <div class="move-nav">
+      <button class="nav-btn" data-nav="first" aria-label="First move"><svg class="ic"><use href="#i-first"/></svg></button>
+      <button class="nav-btn" data-nav="prev" aria-label="Previous move"><svg class="ic"><use href="#i-back"/></svg></button>
+      <div class="movebar" id="movebar"></div>
+      <button class="nav-btn" data-nav="next" aria-label="Next move"><svg class="ic"><use href="#i-next"/></svg></button>
+      <button class="nav-btn" data-nav="last" aria-label="Latest move"><svg class="ic"><use href="#i-last"/></svg></button>
+    </div>
+
+    <div class="game-bar">
+      <button class="gb" data-action="takeback"><svg class="ic"><use href="#i-undo"/></svg>Undo</button>
+      <button class="gb" data-action="hint"><svg class="ic"><use href="#i-bulb"/></svg>Hint</button>
+      <button class="gb" data-action="chat"><svg class="ic"><use href="#i-chat"/></svg>Chat<span class="gb-dot" id="chat-dot" hidden></span></button>
+      <button class="gb" data-action="resign"><svg class="ic"><use href="#i-flag"/></svg>Resign</button>
+      <button class="gb" data-action="draw" hidden><svg class="ic"><use href="#i-users"/></svg>Draw</button>
+      <button class="gb" data-action="newgame"><svg class="ic"><use href="#i-plus"/></svg>New</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════ ONLINE ═══ -->
+
+<section class="screen" id="screen-online">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Play Online</div>
+    <span class="conn-dot" id="conn-dot" data-state="idle" title="Connection"></span>
+  </header>
+  <div class="scroll">
+
+    <div class="server-warn" id="server-warn" hidden>
+      <svg class="ic"><use href="#i-globe"/></svg>
+      <div>
+        <b>No server set</b>
+        <p>Online play needs a relay server. The code for one ships with this app
+           in <code>/server</code> &mdash; deploy it free on Render, then paste the
+           address below. Everything else works offline.</p>
+        <button class="btn btn-ghost btn-sm" data-go="settings">Open Settings</button>
+      </div>
+    </div>
+
+    <div class="conn-line" id="conn-line">Not connected</div>
+
+    <div class="section-label">Time control</div>
+    <div class="tc-wrap" id="online-tc"></div>
+
+    <button class="btn btn-primary btn-wide" id="btn-find" data-action="find-game">
+      <svg class="ic"><use href="#i-search"/></svg> Find Opponent
+    </button>
+
+    <div class="searching" id="searching" hidden>
+      <div class="spin"></div>
+      <div class="s-title">Searching for an opponent…</div>
+      <div class="s-sub" id="search-sub">0:00 elapsed</div>
+      <button class="btn btn-ghost btn-sm" data-action="cancel-search">Cancel</button>
+    </div>
+
+    <div class="section-label">How it works</div>
+    <p class="note">You are paired with whoever else is waiting on the same server
+       for the same time control. Both phones run the rules locally, so the server
+       only relays moves &mdash; nobody can cheat through it.</p>
+  </div>
+</section>
+
+<!-- ═════════════════════════════════════════════════ FRIENDS ═══ -->
+
+<section class="screen" id="screen-friends">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Play with Friends</div>
+    <span class="conn-dot" id="conn-dot-2" data-state="idle"></span>
+  </header>
+  <div class="scroll">
+
+    <div class="server-warn" id="server-warn-2" hidden>
+      <svg class="ic"><use href="#i-globe"/></svg>
+      <div>
+        <b>No server set</b>
+        <p>Friend games need a relay server. Deploy the one in <code>/server</code>
+           and paste its address in Settings &rarr; Online.</p>
+        <button class="btn btn-ghost btn-sm" data-go="settings">Open Settings</button>
+      </div>
+    </div>
+
+    <div class="seg" id="friend-seg">
+      <button class="seg-btn active" data-fseg="host">Invite</button>
+      <button class="seg-btn" data-fseg="join">Join</button>
+    </div>
+
+    <!-- HOST -->
+    <div class="fpane" id="fpane-host">
+      <div class="section-label">Time control</div>
+      <div class="tc-wrap" id="friend-tc"></div>
+      <button class="btn btn-primary btn-wide" data-action="create-room">
+        <svg class="ic"><use href="#i-link"/></svg> Create Invite
+      </button>
+
+      <div class="invite-card" id="invite-card" hidden>
+        <div class="inv-kicker">Your invite code</div>
+        <div class="inv-code" id="inv-code">––––––</div>
+        <div class="inv-row">
+          <button class="btn btn-ghost btn-sm" data-action="copy-code"><svg class="ic"><use href="#i-copy"/></svg> Copy</button>
+          <button class="btn btn-ghost btn-sm" data-action="share-code"><svg class="ic"><use href="#i-share"/></svg> Share</button>
+        </div>
+        <div class="inv-wait"><div class="spin spin-sm"></div> Waiting for your friend to join…</div>
+        <button class="btn btn-ghost btn-sm" data-action="cancel-room">Cancel</button>
+      </div>
+    </div>
+
+    <!-- JOIN -->
+    <div class="fpane" id="fpane-join" hidden>
+      <div class="section-label">Enter your friend’s code</div>
+      <input class="code-input" id="join-code" maxlength="7" autocomplete="off"
+             autocapitalize="characters" spellcheck="false" placeholder="ABC-123" inputmode="text">
+      <button class="btn btn-primary btn-wide" data-action="join-room">
+        <svg class="ic"><use href="#i-key"/></svg> Join Game
+      </button>
+      <p class="note">Codes are six characters and are not case sensitive.
+         They expire when the host leaves.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════ REVIEW ═══ -->
+
+<section class="screen" id="screen-review">
+  <header class="app-bar">
+    <button class="icon-btn" data-action="close-review"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Game Review</div>
+    <button class="icon-btn" data-action="share-pgn" aria-label="Export PGN"><svg class="ic"><use href="#i-share"/></svg></button>
+  </header>
+  <div class="scroll">
+    <div class="analysing" id="analysing">
+      <div class="an-title">Analysing your game…</div>
+      <div class="an-bar"><i id="an-fill"></i></div>
+      <div class="an-sub" id="an-sub">0 / 0</div>
+    </div>
+
+    <div id="review-body" hidden>
+      <div class="acc-row">
+        <div class="acc acc-w">
+          <div class="acc-name" id="acc-w-name">White</div>
+          <div class="acc-val" id="acc-w">0</div>
+          <div class="acc-key">Accuracy</div>
+        </div>
+        <div class="acc-mid" id="acc-opening">–</div>
+        <div class="acc acc-b">
+          <div class="acc-name" id="acc-b-name">Black</div>
+          <div class="acc-val" id="acc-b">0</div>
+          <div class="acc-key">Accuracy</div>
+        </div>
+      </div>
+
+      <div class="graph-wrap"><svg class="eval-graph" id="eval-graph" viewBox="0 0 300 80" preserveAspectRatio="none"></svg></div>
+
+      <div class="section-label">Move breakdown</div>
+      <div class="brk" id="brk"></div>
+
+      <div class="section-label">Every move</div>
+      <div class="rev-list" id="rev-list"></div>
+
+      <div class="section-label">PGN</div>
+      <pre class="pgn-box" id="pgn-box"></pre>
+      <button class="btn btn-ghost btn-wide" data-action="copy-pgn"><svg class="ic"><use href="#i-copy"/></svg> Copy PGN</button>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════ SHEETS ═══ -->
+
+<!-- archive sheet -->
+<div class="sheet" id="archive-sheet" hidden>
+  <div class="sheet-handle"></div>
+  <div class="sheet-body">
+    <div class="sheet-title">My Games</div>
+    <div class="arch-list" id="arch-list"></div>
+    <button class="btn btn-ghost btn-wide" data-action="clear-archive">Clear history</button>
+  </div>
+</div>
+
+<!-- online game-found / opponent sheet -->
+<div class="sheet" id="draw-sheet" hidden>
+  <div class="sheet-handle"></div>
+  <div class="sheet-body">
+    <div class="sheet-title">Draw offer</div>
+    <p class="note" id="draw-text">Your opponent offers a draw.</p>
+    <div class="row-2">
+      <button class="btn btn-primary" data-action="draw-accept">Accept</button>
+      <button class="btn btn-ghost" data-action="draw-decline">Decline</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-scrim" id="scrim" hidden></div>
+
+<div class="sheet" id="bot-sheet" hidden>
+  <div class="sheet-handle"></div>
+  <div class="sheet-body">
+    <div class="bot-hero">
+      <img class="bot-hero-img" id="sheet-img" alt="">
+      <div class="bot-hero-meta">
+        <div class="bot-hero-name" id="sheet-name">Bot</div>
+        <div class="bot-hero-title" id="sheet-title">Title</div>
+        <div class="elo-pill" id="sheet-elo">1000</div>
+      </div>
+    </div>
+    <p class="bot-blurb" id="sheet-blurb"></p>
+
+    <div class="tactic-box">
+      <svg class="tactic-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 2 4 6v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6l-8-4Z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+      <div>
+        <div class="tactic-label">Playing style</div>
+        <div class="tactic-text" id="sheet-tactic"></div>
+        <div class="tactic-traits" id="sheet-traits"></div>
+      </div>
+    </div>
+
+    <div class="section-label">Time control</div>
+    <div class="tc-wrap" id="tc-wrap"></div>
+
+    <div class="section-label">Play as</div>
+    <div class="side-row">
+      <button class="side-btn" data-side="w"><span class="side-ico white">♔</span>White</button>
+      <button class="side-btn" data-side="r"><span class="side-ico rand">?</span>Random</button>
+      <button class="side-btn" data-side="b"><span class="side-ico black">♚</span>Black</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="chat-sheet" hidden>
+  <div class="sheet-handle"></div>
+  <div class="sheet-body">
+    <div class="chat-head">
+      <img class="chat-av" id="chat-av" alt="">
+      <div class="chat-head-meta">
+        <div class="chat-name" id="chat-name">Bot</div>
+        <div class="chat-status" id="chat-status">in character</div>
+      </div>
+    </div>
+    <div class="chat-log" id="chat-log"></div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chat-input" placeholder="Say something…" maxlength="200" autocomplete="off">
+      <button class="chat-send" id="chat-send">Send</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="promo-sheet" hidden>
+  <div class="sheet-handle"></div>
+  <div class="sheet-body">
+    <div class="sheet-title">Promote to</div>
+    <div class="promo-row" id="promo-row"></div>
+  </div>
+</div>
+
+<div class="sheet" id="confirm-sheet" hidden>
+  <div class="sheet-handle"></div>
+  <div class="sheet-body">
+    <div class="sheet-title" id="confirm-title">Are you sure?</div>
+    <p class="confirm-text" id="confirm-text"></p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" data-confirm="no">Cancel</button>
+      <button class="btn btn-primary" data-confirm="yes">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="js/engine.js"></script>
+<script src="js/themes.js"></script>
+<script src="js/bots.js"></script>
+<script src="js/puzzles.js"></script>
+<script src="js/openings.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/review.js"></script>
+<script src="js/online.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
