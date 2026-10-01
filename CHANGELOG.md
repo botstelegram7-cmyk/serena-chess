@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.7 — 2026-10-01
+
+- **Profile pictures.** Tap your avatar on the profile screen and choose any
+  photo from the device gallery. It is centre-cropped square, resized to
+  256px and re-encoded, so a multi-megabyte camera JPEG becomes about 20 KB
+  before it is stored. Needed a `WebChromeClient` on the Android side — a
+  plain file input does nothing in a WebView without one.
+- **Rename yourself with the pencil icon** next to your name, instead of a
+  permanently open text field.
+- **Removed the avatar colour swatches.** A picture replaces them; without
+  one you get your initial on a neutral background.
+- **What's new, in the app.** Settings → What's new shows the full history,
+  rendered from `assets/js/changelog.js`, and opens itself once after an
+  update. A test asserts that `changelog.js`, `CHANGELOG.md` and
+  `AndroidManifest.xml` all agree on the version and build number.
+- **Fixed the CI failure.** Every test script hardcoded `/home/user/...`
+  paths, so the suite only ever ran on the original machine and failed in a
+  clean checkout. Everything now resolves relative to the repository, and
+  the suite is verified to pass from any working directory.
+
+
 ## 1.6 — 2026-10-01
 
 ### The adjustable human opponent

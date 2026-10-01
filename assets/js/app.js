@@ -82,6 +82,7 @@
     if (name === 'profile') refreshProfile();
     if (name === 'settings') refreshSettingsValues();
     if (name === 'puzzles') loadPuzzle(puz.idx);
+    if (name === 'whatsnew') renderWhatsNew();
   }
 
   function copyText(t) {
@@ -474,8 +475,7 @@
         avEl.textContent = color === E.WHITE ? '♔' : '♚';
         avEl.style.background = color === E.WHITE ? '#6c7a89' : '#2f2b28';
       } else {
-        avEl.textContent = (profile.name || 'P').charAt(0).toUpperCase();
-        avEl.style.background = profile.color;
+        applyAvatar(avEl);
       }
     }
     fill('#bot', bottomColor);
@@ -576,6 +576,7 @@
      is resolved against the position at the moment it is applied, never at the
      moment it arrived. */
   var HU = window.ChessHuman;
+  var CL = window.ChessChangelog || { VERSION: '1.7', LOG: [] };
   var moveQueue = [], applying = false;
   var hintStage = 0, hintPly = -1, hintMove = null, hintMovePly = -1;
 
@@ -1237,7 +1238,7 @@
   function refreshHome() {
     var shown = profile.name || 'Player';
     var corner = $('#corner-avatar');
-    if (corner) { corner.textContent = shown.charAt(0).toUpperCase(); corner.style.background = profile.color; }
+    applyAvatar(corner);
     $('#me-name').textContent = shown;
     $('#me-rating').textContent = profile.rating;
     $('#me-tier').textContent = BOTS.tier(profile.rating).label;
@@ -1485,11 +1486,65 @@
     startGame('bot', pendingBot, color, settings.tc);
   });
 
+  /* ───────────────────────────────────────────────────────── avatar ───
+     One painter for every avatar in the app: the profile, the home corner
+     and both player strips. A chosen picture wins; otherwise the initial
+     on a neutral background. */
+  var AVATAR_BG = '#55606b';
+
+  function applyAvatar(el) {
+    if (!el) return;
+    if (profile.photo) {
+      el.textContent = '';
+      el.style.backgroundImage = 'url(' + profile.photo + ')';
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+      el.style.backgroundColor = AVATAR_BG;
+      el.classList.add('has-photo');
+    } else {
+      el.style.backgroundImage = '';
+      el.classList.remove('has-photo');
+      el.textContent = (profile.name || 'P').charAt(0).toUpperCase();
+      el.style.background = AVATAR_BG;
+    }
+  }
+
+  /* Squares, shrinks and re-encodes the picked image before it is stored.
+     A phone camera JPEG is several megabytes and localStorage gives us a
+     handful; 256px at quality 0.85 lands around 20 KB. */
+  function importAvatar(file) {
+    if (!file || !/^image\//.test(file.type)) { toast('That is not an image'); return; }
+    var reader = new FileReader();
+    reader.onerror = function () { toast('Could not read that file'); };
+    reader.onload = function (e) {
+      var img = new Image();
+      img.onerror = function () { toast('Could not read that image'); };
+      img.onload = function () {
+        try {
+          var S = 256;
+          var c = document.createElement('canvas');
+          c.width = S; c.height = S;
+          var side = Math.min(img.width, img.height);          /* centre crop */
+          var sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+          c.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, S, S);
+          profile.photo = c.toDataURL('image/jpeg', 0.85);
+          saveProfile();
+          refreshProfile();
+          refreshHome();
+          toast('Picture updated');
+        } catch (err) { toast('Could not use that image'); }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
   /* ───────────────────────────────────────────────── profile screen ─── */
   function refreshProfile() {
     $('#name-input').value = profile.name;
-    $('#prof-avatar').textContent = (profile.name || 'P').charAt(0).toUpperCase();
-    $('#prof-avatar').style.background = profile.color;
+    $('#name-shown').textContent = profile.name || 'Player';
+    applyAvatar($('#prof-avatar'));
+    $('#btn-av-clear').hidden = !profile.photo;
     $('#st-w').textContent = stats.w;
     $('#st-l').textContent = stats.l;
     $('#st-d').textContent = stats.d;
@@ -1498,26 +1553,30 @@
 
   $('#name-input').addEventListener('input', function () {
     profile.name = this.value.trim();
-    $('#prof-avatar').textContent = (profile.name || 'P').charAt(0).toUpperCase();
+    $('#name-shown').textContent = profile.name || 'Player';
+    applyAvatar($('#prof-avatar'));
     saveProfile();
   });
 
-  function buildAvatarColors() {
-    var row = $('#avatar-colors');
-    row.innerHTML = '';
-    AVATAR_COLORS.forEach(function (c) {
-      var s = document.createElement('button');
-      s.className = 'swatch' + (c === profile.color ? ' sel' : '');
-      s.style.background = c;
-      s.addEventListener('click', function () {
-        profile.color = c; saveProfile();
-        $$('#avatar-colors .swatch').forEach(function (x) { x.classList.remove('sel'); });
-        s.classList.add('sel');
-        $('#prof-avatar').style.background = c;
-      });
-      row.appendChild(s);
-    });
+  /* pencil: reveal the field, hide it again when the user is done */
+  function closeNameEditor() {
+    $('#name-input').hidden = true;
+    $('#name-row').hidden = false;
+    refreshHome();
   }
+  $('#name-input').addEventListener('blur', closeNameEditor);
+  $('#name-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+  });
+
+  $('#avatar-file').addEventListener('change', function () {
+    if (this.files && this.files[0]) importAvatar(this.files[0]);
+    this.value = '';                 /* so picking the same file twice fires */
+  });
+
+  /* Avatar colours were replaced by real pictures in 1.7; buildAvatarColors
+     is kept as a no-op so older callers and saved profiles stay valid. */
+  function buildAvatarColors() {}
 
   /* ──────────────────────────────────────────────── settings screen ─── */
   function refreshSettingsValues() {
@@ -2067,6 +2126,22 @@
       }, 40);
     }
 
+    else if (a === 'pick-avatar') { $('#avatar-file').click(); }
+
+    else if (a === 'clear-avatar') {
+      confirmDialog('Remove picture?', 'Your avatar goes back to the first letter of your name.', function () {
+        delete profile.photo; saveProfile(); refreshProfile(); refreshHome();
+      });
+    }
+
+    else if (a === 'edit-name') {
+      $('#name-row').hidden = true;
+      var inp = $('#name-input');
+      inp.hidden = false; inp.value = profile.name;
+      inp.focus();
+      try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) {}
+    }
+
     else if (a === 'hide-result') { showResult(false); }
     else if (a === 'show-result') { showResult(true); }
 
@@ -2209,6 +2284,57 @@
     window.__remote = applyRemote;
   }
 
+  /* ────────────────────────────────────────────────── what's new ───
+     Rendered from changelog.js so the in-app history and CHANGELOG.md
+     cannot drift apart silently. */
+  var KIND = { 'new': 'New', 'fix': 'Fixed', 'gone': 'Removed', 'note': 'Note' };
+
+  function renderWhatsNew() {
+    var host = $('#wn-body');
+    if (!host || host.dataset.built === CL.VERSION) return;
+    host.innerHTML = '';
+    CL.LOG.forEach(function (rel, idx) {
+      var card = document.createElement('div');
+      card.className = 'wn-rel' + (idx === 0 ? ' wn-current' : '');
+
+      var head = document.createElement('div');
+      head.className = 'wn-head';
+      head.innerHTML = '<span class="wn-v">' + rel.v + '</span>' +
+                       '<span class="wn-title">' + rel.title + '</span>' +
+                       '<span class="wn-date">' + rel.date + '</span>' +
+                       (idx === 0 ? '<span class="wn-badge">Installed</span>' : '');
+      card.appendChild(head);
+
+      var list = document.createElement('ul');
+      list.className = 'wn-list';
+      rel.items.forEach(function (it) {
+        var li = document.createElement('li');
+        li.innerHTML = '<span class="wn-tag wn-' + it[0] + '">' + (KIND[it[0]] || it[0]) + '</span>';
+        li.appendChild(document.createTextNode(it[1]));
+        list.appendChild(li);
+      });
+      card.appendChild(list);
+      host.appendChild(card);
+    });
+    host.dataset.built = CL.VERSION;
+  }
+
+  function stampVersion() {
+    var v = 'Chess \u00b7 v' + CL.VERSION;
+    var tag = $('#ver-tag'); if (tag) tag.textContent = v;
+    var ab = document.querySelector('.about-title');
+    if (ab) ab.textContent = 'Chess ' + CL.VERSION + ' (build ' + CL.BUILD + ')';
+  }
+
+  /* Show the list once after an update, but never on a fresh install. */
+  function announceUpdate() {
+    try {
+      var seen = Store.get('chess.seenVersion', null);
+      Store.set('chess.seenVersion', CL.VERSION);
+      if (seen && seen !== CL.VERSION) { renderWhatsNew(); go('whatsnew'); }
+    } catch (e) {}
+  }
+
   /* ───────────────────────────────────────────────── attribution ───
      Apache-2.0 section 4(d) requires the attribution notice to survive
      into redistributed builds. These are the places it lives. Please
@@ -2269,7 +2395,9 @@
   })();
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { boot(); signBuild(); guardCredits(); });
-  } else { boot(); signBuild(); guardCredits(); }
+    document.addEventListener('DOMContentLoaded', function () {
+      boot(); stampVersion(); signBuild(); guardCredits(); announceUpdate();
+    });
+  } else { boot(); stampVersion(); signBuild(); guardCredits(); announceUpdate(); }
 
 })();

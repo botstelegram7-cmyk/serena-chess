@@ -1,10 +1,10 @@
 /* Fast structural + ordering guarantees for the human opponent. The slow
    full ACPL sweep lives in human_calib.js and is run by hand when the
    curves change. */
-const E = require('/home/user/android-chess/assets/js/engine.js');
-require('/home/user/android-chess/assets/js/openings.js');
-const AI = require('/home/user/android-chess/assets/js/ai.js');
-const H  = require('/home/user/android-chess/assets/js/human.js');
+const E = require('../assets/js/engine.js');
+require('../assets/js/openings.js');
+const AI = require('../assets/js/ai.js');
+const H  = require('../assets/js/human.js');
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  FAIL:', m); } };

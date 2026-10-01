@@ -1,9 +1,9 @@
 /* Measures what the human model actually does, by scoring every move it
    plays against a deeper reference search. ACPL = average centipawn loss. */
-const E = require('/home/user/android-chess/assets/js/engine.js');
-require('/home/user/android-chess/assets/js/openings.js');
-const AI = require('/home/user/android-chess/assets/js/ai.js');
-const H  = require('/home/user/android-chess/assets/js/human.js');
+const E = require('../assets/js/engine.js');
+require('../assets/js/openings.js');
+const AI = require('../assets/js/ai.js');
+const H  = require('../assets/js/human.js');
 
 const REF_DEPTH = 6, REF_MS = 520, SAMPLES = Number(process.argv[3] || 24);
 const MATE = AI.MATE;

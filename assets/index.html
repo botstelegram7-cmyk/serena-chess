@@ -10,6 +10,9 @@
 
 <!-- ─────────────────────────────────────────────── icon sprite ─── -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
   <symbol id="i-sig" viewBox="0 0 24 24"><title>Serena Chess — @TechnicalSerena with @XioquiXin</title><path d="M4 19h16M7 15l5-9 5 9"/></symbol>
   <symbol id="i-bot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 3v5"/><circle cx="12" cy="2.6" r="1.4"/><circle cx="9" cy="13.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="13.5" r="1.3" fill="currentColor" stroke="none"/><path d="M9.5 17h5"/></symbol>
   <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 5.2A3.2 3.2 0 0 1 16 11"/><path d="M18 20c0-2.6-1-4.3-2.6-5.2"/></symbol>
@@ -151,11 +154,27 @@
     <div class="icon-btn ghost"></div>
   </header>
   <div class="scroll">
-    <div class="center-avatar"><div class="avatar avatar-xl" id="prof-avatar">P</div></div>
-    <label class="field-label" for="name-input">Display name</label>
-    <input class="text-input" id="name-input" maxlength="18" placeholder="Player" autocomplete="off">
-    <label class="field-label">Avatar colour</label>
-    <div class="swatch-row" id="avatar-colors"></div>
+    <div class="center-avatar">
+      <button class="avatar avatar-xl" type="button" id="prof-avatar"
+              data-action="pick-avatar" aria-label="Change your picture">P</button>
+      <button class="avatar-cam" type="button" data-action="pick-avatar" aria-label="Change your picture">
+        <svg class="ic"><use href="#i-camera"/></svg>
+      </button>
+    </div>
+    <input type="file" id="avatar-file" accept="image/*" hidden>
+    <div class="av-actions">
+      <button class="btn btn-ghost" data-action="pick-avatar">Choose picture</button>
+      <button class="btn btn-ghost danger" id="btn-av-clear" data-action="clear-avatar" hidden>Remove picture</button>
+    </div>
+
+    <label class="field-label">Display name</label>
+    <div class="name-row" id="name-row">
+      <div class="name-shown" id="name-shown">Player</div>
+      <button class="icon-btn" type="button" data-action="edit-name" aria-label="Edit your name">
+        <svg class="ic"><use href="#i-pencil"/></svg>
+      </button>
+    </div>
+    <input class="text-input" id="name-input" maxlength="18" placeholder="Player" autocomplete="off" hidden>
     <div class="section-label">Statistics</div>
     <div class="stat-grid">
       <div class="stat"><div class="stat-val" id="st-w">0</div><div class="stat-key">Wins</div></div>
@@ -165,6 +184,15 @@
     </div>
     <button class="btn btn-ghost danger" data-action="reset-stats">Reset statistics</button>
   </div>
+</section>
+
+<section class="screen" id="screen-whatsnew">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">What&rsquo;s new</div>
+    <div class="icon-btn ghost"></div>
+  </header>
+  <div class="scroll"><div class="wn-wrap" id="wn-body"></div></div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════ SETTINGS ═══ -->
@@ -262,6 +290,10 @@
         <span class="credit-link">@XioquiXin</span>
       </a>
     </div>
+
+    <button class="btn btn-ghost row-btn" data-go="whatsnew">
+      <svg class="ic"><use href="#i-sparkle"/></svg><span>What&rsquo;s new</span>
+    </button>
 
     <div class="about">
       <div class="about-title">Chess 1.6</div>
@@ -742,6 +774,7 @@
 <script src="js/openings.js"></script>
 <script src="js/ai.js"></script>
     <script src="js/human.js"></script>
+    <script src="js/changelog.js"></script>
 <script src="js/review.js"></script>
 <script src="js/online.js"></script>
 <script src="js/ui.js"></script>

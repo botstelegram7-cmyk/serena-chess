@@ -1,5 +1,5 @@
-const E = require('/home/user/android-chess/assets/js/engine.js');
-const OB = require('/home/user/android-chess/assets/js/openings.js');
+const E = require('../assets/js/engine.js');
+const OB = require('../assets/js/openings.js');
 let bad = 0, lines = 0, plies = 0;
 for (const key in OB.LINES) {
   OB.LINES[key].forEach((line, i) => {

@@ -1,7 +1,7 @@
-const E = require('/home/user/android-chess/assets/js/engine.js'); global.ChessEngine = E;
-global.ChessOpenings = require('/home/user/android-chess/assets/js/openings.js');
-const AI = require('/home/user/android-chess/assets/js/ai.js');
-const BOTS = require('/home/user/android-chess/assets/js/bots.js');
+const E = require('../assets/js/engine.js'); global.ChessEngine = E;
+global.ChessOpenings = require('../assets/js/openings.js');
+const AI = require('../assets/js/ai.js');
+const BOTS = require('../assets/js/bots.js');
 
 // ---- 1. perft regression: the rules engine must be untouched by eval changes
 const t0 = Date.now();

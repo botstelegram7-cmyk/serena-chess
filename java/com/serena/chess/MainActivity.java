@@ -17,6 +17,7 @@ import android.webkit.ValueCallback;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebChromeClient;
 import android.webkit.WebViewClient;
 
 import org.json.JSONObject;
@@ -35,6 +36,14 @@ public class MainActivity extends Activity {
 
     private WebView web;
     private SharedPreferences prefs;
+
+    /* Gallery picker. A plain <input type="file"> does nothing at all in a
+       WebView unless the host supplies a WebChromeClient that opens the
+       chooser and hands the URI back, which is what the two members below
+       and onActivityResult do. ACTION_GET_CONTENT goes through the system
+       document picker, so no storage permission is required. */
+    private static final int REQ_PICK_IMAGE = 4121;
+    private ValueCallback<Uri[]> pendingFileCallback;
 
     /* ───────────────── window.AndroidStore — persistent key/value ───── */
     /** Share sheet + clipboard, used by invite codes and PGN export. */
@@ -184,6 +193,21 @@ public class MainActivity extends Activity {
 
     /* ─────────────────────────────────────────────────────── activity ── */
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode != REQ_PICK_IMAGE) {
+            super.onActivityResult(requestCode, resultCode, data);
+            return;
+        }
+        if (pendingFileCallback == null) return;
+        Uri[] result = null;
+        if (resultCode == Activity.RESULT_OK && data != null && data.getData() != null) {
+            result = new Uri[] { data.getData() };
+        }
+        pendingFileCallback.onReceiveValue(result);   /* null = user cancelled */
+        pendingFileCallback = null;
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
@@ -214,6 +238,27 @@ public class MainActivity extends Activity {
 
         /* keep app pages inside the WebView, send real links to the OS
            (so the Telegram credits actually open Telegram)                */
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView view,
+                                             ValueCallback<Uri[]> callback,
+                                             FileChooserParams params) {
+                if (pendingFileCallback != null) pendingFileCallback.onReceiveValue(null);
+                pendingFileCallback = callback;
+                try {
+                    Intent pick = new Intent(Intent.ACTION_GET_CONTENT);
+                    pick.addCategory(Intent.CATEGORY_OPENABLE);
+                    pick.setType("image/*");
+                    startActivityForResult(Intent.createChooser(pick, "Choose a picture"),
+                                           REQ_PICK_IMAGE);
+                    return true;
+                } catch (Exception e) {
+                    pendingFileCallback = null;
+                    return false;
+                }
+            }
+        });
+
         web.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView v, String url) {

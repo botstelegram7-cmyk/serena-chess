@@ -1,6 +1,9 @@
 const fs = require('fs');
-const P = '/home/user/android-chess/assets/';
-const { JSDOM } = require('/home/user/tests/node_modules/jsdom');
+const path = require('path');
+/* anchored to this file, not the working directory, so the suite runs
+   identically from the repo root, from tests/, and in CI */
+const P = path.join(__dirname, '..', 'assets') + '/';
+const { JSDOM } = require('jsdom');
 const dom = new JSDOM(fs.readFileSync(P+'index.html','utf8'), { runScripts:'outside-only', pretendToBeVisual:true, url:'http://localhost/' });
 const w = dom.window;
 w.WebSocket = function(){ this.readyState=0; this.close=()=>{}; this.send=()=>{}; };
@@ -11,7 +14,7 @@ w.HTMLMediaElement.prototype.load = () => {};
 for (const [k,v] of [['offsetLeft',0],['offsetWidth',10],['clientWidth',100]])
   Object.defineProperty(w.HTMLElement.prototype, k, { get(){ return v } });
 
-for (const f of ['engine','themes','bots','puzzles','openings','ai','review','online','ui','chat','app'])
+for (const f of ['engine','themes','bots','puzzles','openings','ai','human','changelog','review','online','ui','chat','app'])
   w.eval(fs.readFileSync(P+'js/'+f+'.js','utf8'));
 w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
 
@@ -174,6 +177,47 @@ ok('starts idle', ON.state==='idle');
 console.log('\n── no API key in shipped source ──');
 ok('chat.js has no gsk_ token', !fs.readFileSync(P+'js/chat.js','utf8').includes('gsk_'));
 ok('DEFAULT_KEY empty without injection', w.ChessChat.DEFAULT_KEY==='');
+
+console.log('\n── profile picture and name ──');
+const profAv = w.document.getElementById('prof-avatar');
+ok('avatar is a button that opens the picker', profAv && profAv.tagName === 'BUTTON' && profAv.dataset.action === 'pick-avatar');
+ok('a gallery file input exists', (() => { const f = w.document.getElementById('avatar-file'); return f && f.type === 'file' && f.accept.includes('image'); })());
+ok('avatar colour swatches are gone', !w.document.getElementById('avatar-colors'));
+ok('pencil button edits the name', !!w.document.querySelector('[data-action="edit-name"]'));
+ok('name is shown as text by default', (() => { const n = w.document.getElementById('name-shown'); return n && !w.document.getElementById('name-input').hidden === false; })());
+
+/* pencil reveals the field and hides the read-only row */
+w.document.querySelector('[data-action="edit-name"]').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+ok('pencil reveals the input', w.document.getElementById('name-input').hidden === false);
+ok('pencil hides the static row', w.document.getElementById('name-row').hidden === true);
+
+/* typing updates the shown name and every avatar initial */
+const ni = w.document.getElementById('name-input');
+ni.value = 'Zarina'; ni.dispatchEvent(new w.Event('input', { bubbles: true }));
+ok('typing updates the display name', w.document.getElementById('name-shown').textContent === 'Zarina');
+ok('avatar initial follows the name', profAv.textContent === 'Z');
+ok('name is persisted', JSON.parse(w.localStorage.getItem('chess.profile')).name === 'Zarina');
+
+console.log('\n── what\'s new ──');
+ok('the screen exists', !!w.document.getElementById('screen-whatsnew'));
+ok('settings links to it', !!w.document.querySelector('[data-go="whatsnew"]'));
+w.__go ? w.__go('whatsnew') : w.document.querySelector('[data-go="whatsnew"]').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+const wn = w.document.getElementById('wn-body');
+ok('it renders every release', wn.querySelectorAll('.wn-rel').length === w.ChessChangelog.LOG.length);
+ok('the newest release is marked installed', !!wn.querySelector('.wn-rel.wn-current .wn-badge'));
+ok('entries are tagged New/Fixed/Removed', wn.querySelectorAll('.wn-tag').length > 5);
+ok('no emoji in the changelog', !/[\u{1F300}-\u{1FAFF}\u{2700}-\u{27BF}]/u.test(wn.textContent));
+
+console.log('\n── version numbers agree across the project ──');
+const clv = w.ChessChangelog.VERSION;
+const manifest = fs.readFileSync(path.join(__dirname, '..', 'AndroidManifest.xml'), 'utf8');
+const mName = /versionName="([^"]+)"/.exec(manifest)[1];
+const mCode = /versionCode="(\d+)"/.exec(manifest)[1];
+const mdTop = /^##\s*([0-9.]+)/m.exec(fs.readFileSync(path.join(__dirname, '..', 'CHANGELOG.md'), 'utf8'))[1];
+ok(`changelog.js (${clv}) matches AndroidManifest (${mName})`, clv === mName);
+ok(`changelog.js build (${w.ChessChangelog.BUILD}) matches versionCode (${mCode})`, String(w.ChessChangelog.BUILD) === mCode);
+ok(`CHANGELOG.md top entry (${mdTop}) matches the app (${clv})`, mdTop === clv);
+ok('the version is shown on the home screen', (w.document.getElementById('ver-tag').textContent || '').includes(clv));
 
 console.log(fails ? `\n${fails} FAILURES` : '\nALL CHECKS PASSED');
 process.exit(fails?1:0);

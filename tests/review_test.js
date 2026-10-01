@@ -1,7 +1,7 @@
-const E = require('/home/user/android-chess/assets/js/engine.js'); global.ChessEngine = E;
-global.ChessOpenings = require('/home/user/android-chess/assets/js/openings.js');
-const AI = require('/home/user/android-chess/assets/js/ai.js'); global.ChessAI = AI;
-const R = require('/home/user/android-chess/assets/js/review.js');
+const E = require('../assets/js/engine.js'); global.ChessEngine = E;
+global.ChessOpenings = require('../assets/js/openings.js');
+const AI = require('../assets/js/ai.js'); global.ChessAI = AI;
+const R = require('../assets/js/review.js');
 
 // --- history round-trip & navigation
 const scholars = ['e4','e5','Bc4','Nc6','Qh5','Nf6','Qxf7#'];
