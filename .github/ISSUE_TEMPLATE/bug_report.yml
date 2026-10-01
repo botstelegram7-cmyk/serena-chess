@@ -1,0 +1,66 @@
+name: Bug report
+description: Something in the app behaves incorrectly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time. A clear report is usually fixed the same day.
+
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Settings -> About, bottom of the screen
+      placeholder: "Chess v1.6"
+    validations: { required: true }
+
+  - type: input
+    id: device
+    attributes:
+      label: Device and Android version
+      placeholder: "Redmi Note 12, Android 13"
+    validations: { required: true }
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations: { required: true }
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations: { required: true }
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Play vs Bot, choose Human, set the slider to 1500
+        2. Play 1.e4
+        3. ...
+    validations: { required: true }
+
+  - type: textarea
+    id: pgn
+    attributes:
+      label: PGN or FEN, if the bug involves a specific position
+      description: Game Review -> Export PGN. Hugely helpful for engine bugs.
+      render: text
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the app
+      options:
+        - Engine or move legality
+        - Bot opponents
+        - The adjustable Human opponent
+        - Online play or invites
+        - Game Review
+        - Puzzles or Practice
+        - Themes, sounds, appearance
+        - Something else
+    validations: { required: true }

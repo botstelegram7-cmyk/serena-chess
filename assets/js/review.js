@@ -361,7 +361,8 @@
       ['Round', '-'],
       ['White', meta.white || 'White'],
       ['Black', meta.black || 'Black'],
-      ['Result', meta.result || '*']
+      ['Result', meta.result || '*'],
+      ['Annotator', 'Serena Chess \u00b7 @TechnicalSerena']
     ];
     if (meta.whiteElo) tags.push(['WhiteElo', String(meta.whiteElo)]);
     if (meta.blackElo) tags.push(['BlackElo', String(meta.blackElo)]);

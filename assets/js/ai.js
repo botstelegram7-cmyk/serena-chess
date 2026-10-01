@@ -482,6 +482,11 @@
     var legal = game.moves();
     if (legal.length === 0) return null;
 
+    /* the adjustable human opponent runs on a different model entirely */
+    if (bot && bot.human && root.ChessHuman) {
+      return root.ChessHuman.pickMove(game, bot, sanHistory);
+    }
+
     /* follow the bot's opening repertoire while it lasts */
     var OB = root.ChessOpenings;
     if (OB && bot.book && sanHistory && sanHistory.length < 18) {

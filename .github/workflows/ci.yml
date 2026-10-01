@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Engine and app tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Syntax check every module
+        run: for f in assets/js/*.js server/*.js; do node --check "$f"; done
+
+      - name: Install test dependencies
+        run: npm install --no-save jsdom
+
+      - name: Opening book is legal
+        run: node tests/book_test.js
+
+      - name: Perft and per-bot style separation
+        run: node tests/style_test.js
+
+      - name: Game review and classification
+        run: node tests/review_test.js
+
+      - name: Human opponent calibration
+        run: node tests/human_test.js
+
+      - name: Application behaviour
+        run: node tests/app_test.js
+
+  secrets:
+    name: No credentials in the tree
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail if a key or keystore was committed
+        run: |
+          if git ls-files | grep -iE 'keystore|local\.key|\.jks|\.netrc'; then
+            echo "::error::a credential file is tracked"; exit 1
+          fi
+          if git grep -nIE 'gsk_[A-Za-z0-9]{20}|ghp_[A-Za-z0-9]{20}' -- . ; then
+            echo "::error::an API token is present in the source"; exit 1
+          fi
+          echo "clean"

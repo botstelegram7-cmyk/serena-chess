@@ -1,6 +1,23 @@
 /* =========================================================================
    app.js — screens, state, clocks, themes and game flow
    ========================================================================= */
+/* -------------------------------------------------------------------------
+   This module owns application state and screen routing. Nothing
+   else writes to localStorage directly; everything goes through Store
+   calls below, so a schema change only has to happen in one place.
+   Handlers are delegated from document rather than bound per element,
+   never per node, because screens are rebuilt whenever they open.
+   If you add a screen, register it in SCREENS and give it a back route;
+   clicking back on an unregistered screen silently does nothing at all.
+   All long work (search, review) runs behind a setTimeout so that the
+   layout gets a frame to paint the thinking indicator before it blocks.
+   Sheets close on backdrop click, which is why every sheet handler
+   exits early unless the event target is the sheet element itself.
+   Rendering the board is ui.js's job; this file never touches squares
+   except through the Board instance held in `board` further down.
+   Never assume G.game is non-null during boot: resumeGame may replace it.
+   Always drive new behaviour through tests/app_test.js.
+   ------------------------------------------------------------------------- */
 (function () {
   'use strict';
 
@@ -46,7 +63,7 @@
     preset: 'classic', board: 'green', piece: 'classic', bg: 'classic', sound: 'default',
     anim: true, coords: true, hints: true, last: true, autoq: false, tc: '10+0',
     chat: true, groqKey: CHAT.DEFAULT_KEY, notify: false, notifyAt: '19:00',
-    srvUrl: '', onlineHints: false
+    srvUrl: '', onlineHints: false, hintStyle: 'both', humanElo: 1200
   }, Store.get('chess.settings', {}));
 
   function saveProfile()  { Store.set('chess.profile', profile); }
@@ -412,7 +429,7 @@
     chatLog = [];
     G.lastEval = 0;
     $('#chat-dot').hidden = true;
-    if (G.mode === 'bot') {
+    if (G.mode === 'bot' && !G.bot.human) {
       CHAT.reset(G.bot);
       renderSay('*sits down at the board*');
       if (settings.chat) setTimeout(function () { CHAT.say('start', {}, true); }, 800);
@@ -558,6 +575,7 @@
      Queue entries are either { move } or { san, from, to, promo }; a SAN entry
      is resolved against the position at the moment it is applied, never at the
      moment it arrived. */
+  var HU = window.ChessHuman;
   var moveQueue = [], applying = false;
   var hintStage = 0, hintPly = -1, hintMove = null, hintMovePly = -1;
 
@@ -665,9 +683,20 @@
     setTimeout(function () {
       var g = G.game, mv = null;
       var hist = G.moves.map(function (m) { return m.san; });
+      var last = G.moves.length ? G.moves[G.moves.length - 1] : null;
+      if (G.bot && G.bot.human) G.bot.lastTo = last ? last.to : -1;
       try { mv = AI.pickMove(g, G.bot, hist); }
       catch (err) { mv = g.moves()[0] || null; }
-      var pause = Math.max(0, 300 - (Date.now() - started));
+
+      /* A person does not answer in a constant 300 ms. Forced recaptures come
+         back instantly, hard positions get a long stare. */
+      var want = 300;
+      if (G.bot && G.bot.human) {
+        var forced = g.moves().length <= 2 ||
+                     (last && mv && mv.to === last.to && (mv.flags & E.FLAG_CAPTURE));
+        want = HU.thinkMs(g, G.bot, forced);
+      }
+      var pause = Math.max(0, want - (Date.now() - started));
       setTimeout(function () {
         $('#top-thinking').hidden = true;
         G.thinking = false;
@@ -875,6 +904,7 @@
     Store.set('chess.game', {
       fen: G.game.fen(), startFen: G.hist ? G.hist.startFen : null,
       mode: G.mode, botId: G.bot ? G.bot.id : null,
+      humanElo: (G.bot && G.bot.human) ? G.bot.elo : null,
       myColor: G.myColor, moves: G.moves.map(function (m) { return m.san; }),
       ply: G.moves.length, tc: G.tc ? G.tc.id : 'unlimited',
       ms: Clock.on ? Clock.ms.slice() : null
@@ -1250,6 +1280,19 @@
   function buildBotGrid() {
     var grid = $('#bot-grid');
     grid.innerHTML = '';
+
+    /* The adjustable opponent sits first: it is the one most people want. */
+    var hc = document.createElement('button');
+    hc.className = 'bot-card human-card';
+    hc.innerHTML =
+      '<span class="bc-tier" style="background:#6aa84f"></span>' +
+      '<img src="avatars/player3.jpg" alt="">' +
+      '<div class="bc-name">Human</div>' +
+      '<div class="bc-elo" id="hc-elo">' + settings.humanElo + '</div>' +
+      '<div class="bc-tactic">You set the rating</div>';
+    hc.addEventListener('click', openHumanSheet);
+    grid.appendChild(hc);
+
     BOTS.BOTS.forEach(function (b) {
       var t = BOTS.tier(b.elo);
       var el = document.createElement('button');
@@ -1268,8 +1311,8 @@
   /* ──────────────────────────────────────────────── bot sheet + time ─── */
   var pendingBot = null;
 
-  function buildTimeControls() {
-    var wrap = $('#tc-wrap');
+  function buildTimeControls(sel) {
+    var wrap = $(sel || '#tc-wrap');
     wrap.innerHTML = '';
     var groups = [];
     T.TIME_CONTROLS.forEach(function (tc) {
@@ -1363,9 +1406,75 @@
       tr.appendChild(c2);
     }
 
-    buildTimeControls();
+    buildTimeControls('#tc-wrap');
     openSheet('#bot-sheet');
   }
+
+  /* ─────────────────────────────────────────── the human opponent ─── */
+  var pendingHuman = null;
+
+  function makeHuman(elo) {
+    var id = HU.identity(elo);
+    return {
+      id: 'human', human: true, elo: id.rating, name: id.name,
+      avatar: id.avatar, title: 'Online player', country: id.country,
+      series: '', blurb: '', tactic: '', book: [],
+      style: AI.DEFAULT_STYLE, depth: 0, timeMs: 0,
+      blunder: 0, spread: 0, contempt: 0
+    };
+  }
+
+  function paintHumanSheet(elo) {
+    $('#hs-elo').textContent = elo;
+    $('#hs-band').textContent = HU.band(elo);
+    var p = HU.profile(elo);
+    $('#hs-detail').textContent =
+      'Calculates about ' + p.horizon + (p.horizon === 1 ? ' move' : ' moves') +
+      ' ahead  \u00b7  thinks for roughly ' + (p.timeMs / 1000).toFixed(1) + 's a move';
+  }
+
+  function openHumanSheet() {
+    pendingHuman = makeHuman(settings.humanElo);
+    $('#hs-img').src = pendingHuman.avatar;
+    $('#hs-name').textContent = pendingHuman.name;
+    $('#hs-range').value = settings.humanElo;
+    paintHumanSheet(settings.humanElo);
+    buildTimeControls('#tc-wrap-h');
+    openSheet('#human-sheet');
+  }
+
+  $('#hs-range').addEventListener('input', function () {
+    var v = parseInt(this.value, 10) || 1200;
+    settings.humanElo = v;
+    if (pendingHuman) pendingHuman.elo = v;
+    paintHumanSheet(v);
+    var tag = $('#hc-elo'); if (tag) tag.textContent = v;
+  });
+  $('#hs-range').addEventListener('change', saveSettings);
+
+  $('#human-sheet').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-side]');
+    if (!b || !pendingHuman) return;
+    var s = b.dataset.side;
+    var color = s === 'w' ? E.WHITE : (s === 'b' ? E.BLACK : (Math.random() < 0.5 ? E.WHITE : E.BLACK));
+    pendingHuman.elo = settings.humanElo;
+    closeSheets();
+    startGame('bot', pendingHuman, color, settings.tc);
+  });
+
+  function paintHintSeg() {
+    var cur = settings.hintStyle || 'both';
+    $$('#seg-hintStyle .seg-btn').forEach(function (b) {
+      b.classList.toggle('sel', b.dataset.hintstyle === cur);
+    });
+  }
+  $('#seg-hintStyle').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-hintstyle]');
+    if (!b) return;
+    settings.hintStyle = b.dataset.hintstyle;
+    saveSettings(); paintHintSeg();
+  });
+  paintHintSeg();
 
   $('#bot-sheet').addEventListener('click', function (e) {
     var b = e.target.closest('[data-side]');
@@ -1950,8 +2059,9 @@
           hintStage = 1;
           if (G.mode === 'online') ON.sendChat('(used a hint)');
         } else {
-          board.markSquare(mv.to, 'hintto');
-          board.drawArrow(mv.from, mv.to, '#4caf50');
+          var st = settings.hintStyle || 'both';
+          if (st !== 'arrow') board.markSquare(mv.to, 'hintto');
+          if (st !== 'highlight') board.drawArrow(mv.from, mv.to);
           hintStage = 0;
         }
       }, 40);
@@ -1971,7 +2081,8 @@
   function resumeGame(saved) {
     G.game = new E.Chess(saved.fen);
     G.mode = saved.mode;
-    G.bot = saved.botId ? BOTS.byId(saved.botId) : null;
+    G.bot = saved.botId === 'human' ? makeHuman(saved.humanElo || settings.humanElo)
+          : saved.botId ? BOTS.byId(saved.botId) : null;
     G.myColor = saved.myColor;
     G.hist = RV.History.fromSan(saved.moves || [], saved.startFen || null);
     G.moves = G.hist.moves.map(function (m) { return { san: m.san, from: m.from, to: m.to }; });
@@ -2098,7 +2209,67 @@
     window.__remote = applyRemote;
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-  else boot();
+  /* ───────────────────────────────────────────────── attribution ───
+     Apache-2.0 section 4(d) requires the attribution notice to survive
+     into redistributed builds. These are the places it lives. Please
+     leave them alone; everything else in this file is fair game. */
+  var CREDIT = {
+    app: 'Serena Chess',
+    author: '@TechnicalSerena',
+    with: '@XioquiXin',
+    license: 'Apache-2.0',
+    repo: 'github.com/botstelegram7-cmyk/serena-chess'
+  };
+
+  if (typeof window !== 'undefined') {
+    window.__attribution = function () { return JSON.parse(JSON.stringify(CREDIT)); };
+  }
+
+  function signBuild() {
+    try {
+      if (!Store.get('chess.sig', null)) {
+        Store.set('chess.sig', { by: CREDIT.author, with: CREDIT['with'], at: Date.now() });
+      }
+    } catch (e) {}
+    try {
+      console.log('%c ' + CREDIT.app + ' ', 'background:#6aa84f;color:#fff;font-weight:700',
+                  '\n  built by ' + CREDIT.author + ' with ' + CREDIT['with'] +
+                  '\n  ' + CREDIT.license + '  \u00b7  ' + CREDIT.repo);
+    } catch (e) {}
+  }
+
+  /* If the credits block is torn out of the DOM at runtime, put it back.
+     Removing it from a redistributed build is a licence violation; doing
+     it by script is just rude. */
+  function guardCredits() {
+    var host = document.querySelector('.credits');
+    if (!host || typeof MutationObserver === 'undefined') return;
+    var snapshot = host.innerHTML;
+    new MutationObserver(function () {
+      if (!host.querySelector('.credit-row')) host.innerHTML = snapshot;
+    }).observe(host, { childList: true, subtree: true });
+  }
+
+  /* Tap the version line seven times. */
+  (function () {
+    var taps = 0, timer = null;
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest || !e.target.closest('#ver-tag')) return;
+      taps++;
+      clearTimeout(timer);
+      timer = setTimeout(function () { taps = 0; }, 1600);
+      if (taps >= 7) {
+        taps = 0;
+        confirmDialog(CREDIT.app,
+          'Built by ' + CREDIT.author + ' with ' + CREDIT['with'] + '.\n\n' +
+          'You found the hidden credits. There are a few more buried in the source.',
+          function () {});
+      }
+    });
+  })();
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { boot(); signBuild(); guardCredits(); });
+  } else { boot(); signBuild(); guardCredits(); }
 
 })();

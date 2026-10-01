@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest something the app should do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve
+      description: Describe the situation you are in, not the solution you have in mind.
+    validations: { required: true }
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you would like it to do
+    validations: { required: true }
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: This works offline, or degrades gracefully without a network
+        - label: This does not require an account or a paid service

@@ -76,7 +76,7 @@ for (const [lo, hi] of pairs) {
 }
 
 // ---- 5. every bot must produce a legal move from the start position
-console.log('\n--- all 32 bots return a legal first move ---');
+console.log('\n--- every bot in the roster returns a legal first move ---');
 let bad = [];
 for (const b of BOTS.BOTS) {
   const gg = new E.Chess();
@@ -85,4 +85,26 @@ for (const b of BOTS.BOTS) {
   const legal = gg.moves().some(x => x.from === mv.from && x.to === mv.to);
   if (!mv || !legal) bad.push(b.id);
 }
-console.log(bad.length ? '  FAIL: ' + bad.join(',') : '  all 32 OK');
+console.log(bad.length ? '  FAIL: ' + bad.join(',') : '  all ' + BOTS.BOTS.length + ' OK');
+if (bad.length) process.exitCode = 1;
+
+console.log('\n--- roster integrity ---');
+var elos = BOTS.BOTS.map(function (b) { return b.elo; });
+var sorted = elos.every(function (v, i) { return i === 0 || elos[i-1] <= v; });
+var ids = BOTS.BOTS.map(function (b) { return b.id; });
+var uniqIds = new Set(ids).size === ids.length;
+var uniqNames = new Set(BOTS.BOTS.map(function (b) { return b.name; })).size === ids.length;
+var gap = 0; for (var gi = 1; gi < elos.length; gi++) gap = Math.max(gap, elos[gi] - elos[gi-1]);
+var fields = BOTS.BOTS.filter(function (b) {
+  return !b.name || !b.avatar || !b.title || !b.blurb || !b.tactic || !b.style ||
+         !b.book || !b.book.length || typeof b.depth !== 'number';
+});
+var styleKeys = ['material','kingAttack','centre','pawns','passers','rooks','bishops','safety','aggression','trade'];
+var badStyle = BOTS.BOTS.filter(function (b) { return styleKeys.some(function (k) { return typeof b.style[k] !== 'number'; }); });
+console.log('  count:', BOTS.BOTS.length);
+console.log('  sorted by elo:', sorted ? 'yes' : 'NO');
+console.log('  unique ids / names:', (uniqIds && uniqNames) ? 'yes' : 'NO');
+console.log('  largest elo gap:', gap);
+console.log('  entries missing fields:', fields.length ? fields.map(function(b){return b.id;}).join(',') : 'none');
+console.log('  entries with bad style weights:', badStyle.length ? badStyle.map(function(b){return b.id;}).join(',') : 'none');
+if (!sorted || !uniqIds || !uniqNames || gap > 150 || fields.length || badStyle.length) process.exitCode = 1;

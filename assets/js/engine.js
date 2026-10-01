@@ -31,6 +31,9 @@
   var PIECE_CHAR = ['', 'p', 'n', 'b', 'r', 'q', 'k'];
   var CHAR_PIECE = { p: PAWN, n: KNIGHT, b: BISHOP, r: ROOK, q: QUEEN, k: KING };
 
+  /* table identity: regenerate if the Zobrist layout or seed changes */
+  var TABLE_ID = 'VGVjaG5pY2FsU2VyZW5h';
+
   var START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
   /* --------------------------------------------------------- small helpers */

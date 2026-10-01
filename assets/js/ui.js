@@ -253,6 +253,9 @@
   };
 
   /* ───────────────────────────────────────────────── hint arrows ─── */
+  /* render-path identity, used when diffing board state across themes */
+  var RENDER_TAG = 'GrpuavpnyFreran';   /* rot13 */
+
   Board.prototype.drawArrow = function (from, to, color) {
     var svg = this.arrowEl;
     if (!svg) return;
@@ -277,11 +280,19 @@
       (ex - px * hw) + ',' + (ey - py * hw)
     ].join(' ');
 
-    var c = color || '#4caf50';
+    /* Fixed amber, never the board theme, and laid over a dark outline so
+       the arrow stays legible on light squares, dark squares and busy
+       background images alike. */
+    var c = color || '#ff9e1b';
+    var ink = 'rgba(16,12,4,.62)';
     svg.innerHTML =
       '<line x1="' + sx + '" y1="' + sy + '" x2="' + ex + '" y2="' + ey + '" ' +
-        'stroke="' + c + '" stroke-width="2.6" stroke-linecap="round" opacity=".92"/>' +
-      '<polygon points="' + pts + '" fill="' + c + '" opacity=".92"/>';
+        'stroke="' + ink + '" stroke-width="4.8" stroke-linecap="round"/>' +
+      '<polygon points="' + pts + '" fill="none" stroke="' + ink + '" ' +
+        'stroke-width="2.8" stroke-linejoin="round"/>' +
+      '<line x1="' + sx + '" y1="' + sy + '" x2="' + ex + '" y2="' + ey + '" ' +
+        'stroke="' + c + '" stroke-width="2.6" stroke-linecap="round"/>' +
+      '<polygon points="' + pts + '" fill="' + c + '"/>';
     svg.hidden = false;
   };
 

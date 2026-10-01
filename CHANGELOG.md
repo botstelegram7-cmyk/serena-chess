@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.6 — 2026-10-01
+
+### The adjustable human opponent
+- New **Human** opponent at the top of the opponent grid, with a slider from
+  400 to 2800. Strength comes from a rating-dependent search horizon, an
+  attention weighting over candidate moves, softmax sampling and a separate
+  error ceiling — not from a weakened engine making random bad moves.
+- Human pacing: long-tailed thinking time, instant forced recaptures, the
+  occasional long stare. Ordinary username, default avatar, no in-character
+  chat.
+- Measured average centipawn loss by setting: 600 → 162, 1000 → 84,
+  1400 → 74, 2200 → 42, 2600 → 22. Reproduce with `tests/human_calib.js`.
+
+### Roster
+- **28 new characters**, bringing the roster to 60. The ladder had 150-point
+  gaps below 1600; the largest gap is now 50.
+
+### Hints
+- **Fixed the invisible hint.** The ring was green and so is the green board,
+  so on that theme the hint simply could not be seen. Hint marks now use a
+  fixed amber with a dark counter-ring and a translucent fill, independent of
+  the board theme, and the arrow is drawn over a dark outline so it reads on
+  any square, piece set or background image.
+- New **Settings → Hints** control: Highlight, Arrow, or Both.
+
+### Project
+- Relicensed to **Apache 2.0** with a `NOTICE` file, so attribution is a
+  licence condition rather than a request.
+- Added `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, issue and PR
+  templates, an `.editorconfig`, and CI that runs every test plus a
+  credential scan on each push.
+- Added `docs/SELF-HOSTING.md` (Render, Railway, Fly.io, Docker, VPS, LAN,
+  plus hosting the app itself as a web build) and `docs/ARCHITECTURE.md`.
+- Rewrote the README.
+
+
 ## v1.5 — Analysis you can actually see
 
 ### Fixed
