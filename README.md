@@ -4,7 +4,7 @@ A complete, offline-first chess app for Android. One WebView, no Gradle, no
 Android Studio, no frameworks — a `build.sh` that produces a signed APK in
 about six seconds.
 
-**[Download the APK](releases/Chess-v1.4.apk)** · v1.4 · 1.5 MB · Android 5.0+
+**[Download the APK](releases/Chess-v1.5.apk)** · v1.5 · 1.5 MB · Android 5.0+
 
 ---
 
