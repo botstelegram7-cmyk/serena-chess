@@ -46,7 +46,7 @@
     preset: 'classic', board: 'green', piece: 'classic', bg: 'classic', sound: 'default',
     anim: true, coords: true, hints: true, last: true, autoq: false, tc: '10+0',
     chat: true, groqKey: CHAT.DEFAULT_KEY, notify: false, notifyAt: '19:00',
-    srvUrl: ''
+    srvUrl: '', onlineHints: false
   }, Store.get('chess.settings', {}));
 
   function saveProfile()  { Store.set('chess.profile', profile); }
@@ -348,7 +348,7 @@
     var lastMove = mv ? { from: mv.from, to: mv.to } : null;
 
     board.setPosition(g, lastMove);
-    board.clearArrow();
+    board.clearArrow(); board.clearMarks();
     if (!silent && (wasBrowsing || browsing())) UI.Sound.play(mv && mv.san.indexOf('x') >= 0 ? 'capture' : 'moveOpp');
 
     renderMoveBar();
@@ -388,6 +388,8 @@
     G.hist = new RV.History(fen || null);
     G.viewPly = null; G.review = null; G.startedAt = Date.now();
     moveQueue.length = 0; applying = false;
+    lastResult = null; $('#result-strip').hidden = true;
+    hintStage = 0; hintPly = -1; hintMove = null; hintMovePly = -1;
     $('#evalbar').hidden = true;
 
     applyAppearance();
@@ -557,6 +559,7 @@
      is resolved against the position at the moment it is applied, never at the
      moment it arrived. */
   var moveQueue = [], applying = false;
+  var hintStage = 0, hintPly = -1, hintMove = null, hintMovePly = -1;
 
   function applyMove(move, byMe) {
     if (!move) return;
@@ -612,6 +615,8 @@
       G.moves.push({ san: san, from: move.from, to: move.to });
       G.hist.push({ san: san, from: move.from, to: move.to, promo: move.promo || 0 }, g.fen());
       G.viewPly = null;
+      board.clearMarks();
+      hintStage = 0; hintMove = null; hintMovePly = -1;
       board.setPosition(g, move);
       renderCaptured(); renderMoveBar(); updateNav();
 
@@ -719,6 +724,25 @@
     saveArchive();
   }
 
+  /* The game-over card covers the board, which makes it impossible to study the
+     final position. It is dismissible, and a slim strip keeps the result and
+     the review button within reach. */
+  var lastResult = null;
+
+  function showResult(show) {
+    $('#board-overlay').hidden = !show;
+    var strip = $('#result-strip');
+    if (!lastResult) { strip.hidden = true; return; }
+    strip.hidden = show;                 // the strip stands in for the popup
+    if (!show) {
+      $('#rs-icon').textContent = lastResult.icon;
+      $('#rs-text').textContent = lastResult.title + ' \u00b7 ' + lastResult.sub;
+      $$('#result-strip [data-action="review"]').forEach(function (b) {
+        b.hidden = !G.hist || G.hist.length() < 2;
+      });
+    }
+  }
+
   function finishGame(st, forced) {
     if (G.over) return;
     G.over = true;
@@ -734,7 +758,8 @@
       var winner = st.result === 'white' ? E.WHITE : E.BLACK;
       var names = playerNames();
       icon = winner === E.WHITE ? '♔' : '♚';
-      title = (winner === E.WHITE ? names.w : names.b) + ' wins';
+      var wn = (winner === E.WHITE ? names.w : names.b);
+      title = wn + (wn === 'You' ? ' win' : ' wins');
       sub = st.reason === 'timeout' ? 'On time'
           : st.reason === 'resignation' ? 'By resignation'
           : st.reason.charAt(0).toUpperCase() + st.reason.slice(1);
@@ -761,7 +786,8 @@
       sub += '  \u00b7  ' + (delta > 0 ? '+' : '') + delta + ' rating';
     }
     $('#ov-sub').textContent = sub;
-    $('#board-overlay').hidden = false;
+    lastResult = { icon: icon, title: title, sub: sub };
+    showResult(true);
     $$('[data-action="review"]').forEach(function (b) { b.hidden = G.moves.length < 2; });
     $$('[data-action="rematch"]').forEach(function (b) { b.hidden = (G.mode === 'online'); });
     if (st.reason !== 'checkmate') UI.Sound.play('gameEnd');
@@ -825,8 +851,9 @@
         b.hidden = online;                       // you cannot take back against a human
         b.disabled = !canAct || G.moves.length === 0;
       } else if (a === 'hint') {
-        b.hidden = online;
-        b.disabled = !canAct || G.mode !== 'bot' || G.game.turn !== G.myColor;
+        var allowed = (G.mode === 'bot') || (online && settings.onlineHints);
+        b.hidden = !allowed;
+        b.disabled = !canAct || !allowed || G.game.turn !== G.myColor;
       } else if (a === 'draw') {
         b.hidden = !online;
         b.disabled = G.over;
@@ -1495,13 +1522,15 @@
 
   function bindToggles() {
     var map = { 'opt-anim': 'anim', 'opt-coords': 'coords', 'opt-hints': 'hints',
-                'opt-last': 'last', 'opt-autoq': 'autoq', 'opt-chat': 'chat' };
+                'opt-last': 'last', 'opt-autoq': 'autoq', 'opt-chat': 'chat',
+                'opt-onlineHints': 'onlineHints' };
     Object.keys(map).forEach(function (id) {
       var el = document.getElementById(id), key = map[id];
       if (!el) return;
       el.checked = !!settings[key];
       el.addEventListener('change', function () {
         settings[key] = el.checked; saveSettings(); applyAppearance(); syncChat();
+        if (G.game) updateBar();
       });
     });
   }
@@ -1722,6 +1751,11 @@
   }
 
   /* ───────────────────────────────────────────────── global actions ─── */
+  /* tapping the dark area around the result card dismisses it */
+  $('#board-overlay').addEventListener('click', function (e) {
+    if (e.target === this) showResult(false);
+  });
+
   document.addEventListener('click', function (e) {
     /* ---- move navigation: < > |< >| and tapping a move in the bar ---- */
     var navEl = e.target.closest('[data-nav]');
@@ -1815,12 +1849,13 @@
     /* ---------------------------------------------------- review ---- */
     if (a === 'review') {
       if (!G.hist || G.hist.length() < 2) { toast('Not enough moves to review'); return; }
+      showResult(false);
       openReview(G.hist, currentMeta());
       return;
     }
     if (a === 'close-review') {
       if (analysisHandle) { analysisHandle.cancel(); analysisHandle = null; }
-      go(G.game && !G.over ? 'game' : 'home');
+      if (G.game) { go('game'); showResult(false); } else { go('home'); }
       return;
     }
     if (a === 'copy-pgn' || a === 'share-pgn') {
@@ -1895,17 +1930,35 @@
     }
 
     else if (a === 'hint') {
-      if (G.thinking || G.over) return;
+      if (G.thinking || G.over || browsing()) return;
+      /* Two stages, so a hint is a nudge rather than the answer:
+           1st tap - ring the piece you should move
+           2nd tap - draw the arrow to where it goes
+         The move is never written out in text. */
+      if (hintPly !== G.moves.length) { hintStage = 0; hintPly = G.moves.length; }
       G.thinking = true; updateBar();
-      toast('Thinking…', 600);
       setTimeout(function () {
-        var mv = AI.bestMove(G.game, 4, 900);
+        var mv = (hintMovePly === G.moves.length && hintMove)
+          ? hintMove : AI.bestMove(G.game, 4, 900);
         G.thinking = false; updateBar();
         if (!mv) return;
-        board.drawArrow(mv.from, mv.to, '#4caf50');
-        toast('Try ' + G.game.moveToSan(mv), 2200);
-      }, 60);
+        hintMove = mv; hintMovePly = G.moves.length;
+
+        board.clearMarks(); board.clearArrow();
+        board.markSquare(mv.from, 'hintsq');
+        if (hintStage === 0) {
+          hintStage = 1;
+          if (G.mode === 'online') ON.sendChat('(used a hint)');
+        } else {
+          board.markSquare(mv.to, 'hintto');
+          board.drawArrow(mv.from, mv.to, '#4caf50');
+          hintStage = 0;
+        }
+      }, 40);
     }
+
+    else if (a === 'hide-result') { showResult(false); }
+    else if (a === 'show-result') { showResult(true); }
 
     else if (a === 'reset-stats') {
       confirmDialog('Reset statistics?', 'Wins, losses and draws will be set to zero.', function () {
@@ -1925,6 +1978,8 @@
     G.over = false; G.thinking = false;
     G.viewPly = null; G.review = null; G.startedAt = Date.now();
     moveQueue.length = 0; applying = false;
+    lastResult = null; $('#result-strip').hidden = true;
+    hintStage = 0; hintPly = -1; hintMove = null; hintMovePly = -1;
     G.tc = T.timeControl(saved.tc || 'unlimited');
     $('#evalbar').hidden = true;
 

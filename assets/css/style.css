@@ -695,3 +695,30 @@ body.light-bg .bs-text em { color: #6b655e; }
 .arch-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 26px 0; }
 
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 12px; }
+
+
+/* ─────────────────────────────────── dismissible result + hint marks ─── */
+.overlay-card { position: relative; }
+.ov-close { position: absolute; top: 9px; right: 9px; width: 30px; height: 30px;
+  display: grid; place-items: center; border: 0; border-radius: 50%;
+  background: rgba(255,255,255,.08); color: var(--muted); cursor: pointer; }
+.ov-close:active { background: rgba(255,255,255,.16); color: #fff; }
+.ov-close .ic { width: 15px; height: 15px; }
+
+.result-strip { display: flex; align-items: center; gap: 8px; margin: 0 6px 6px;
+  padding: 7px 8px 7px 11px; border-radius: 11px;
+  background: rgba(255,255,255,.07); border: 1px solid var(--line); }
+.rs-icon { font-size: 16px; line-height: 1; }
+.rs-text { flex: 1; font-size: 12.5px; font-weight: 700; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.rs-btn { border: 0; border-radius: 8px; padding: 5px 11px; font-size: 11.5px;
+  font-weight: 800; cursor: pointer; background: var(--green); color: #1d2b11; }
+.rs-btn.rs-ghost { background: rgba(255,255,255,.10); color: #d6d1cb; }
+
+/* hint: show the piece, never name the move */
+.sq.hintsq::before, .sq.hintto::before {
+  content: ''; position: absolute; inset: 0; border-radius: 2px;
+  box-shadow: inset 0 0 0 4px rgba(76,175,80,.95);
+  animation: hintpulse 1.15s ease-in-out infinite; pointer-events: none; z-index: 3; }
+.sq.hintto::before { box-shadow: inset 0 0 0 4px rgba(76,175,80,.55); animation: none; }
+@keyframes hintpulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }

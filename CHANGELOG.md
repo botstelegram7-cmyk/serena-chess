@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.5 — Analysis you can actually see
+
+### Fixed
+- **The game-over card blocked the board.** You could not see your last move or
+  study the final position. It now has a close button, dismisses when you tap
+  the area around it, and leaves behind a slim strip with the result plus a
+  Review button. Move navigation stays fully live underneath, so a finished
+  game can be stepped through move by move.
+- **Hint gave the answer away in text** ("Try Nf3"). It is now purely visual and
+  progressive: the first tap rings the piece you should move, a second tap draws
+  the arrow to its destination. Nothing is ever written out. The ring survives
+  picking the piece up.
+- "You wins" now reads "You win".
+- Closing Game Review returns to the board instead of the home screen.
+
+### Added
+- **Hints in online games**, off by default under Settings → Online. An engine
+  hint against a human is assistance, so when it is on your opponent is told in
+  chat each time you use one.
+
 ## v1.4 — Online, navigation and review
 
 ### Added

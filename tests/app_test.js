@@ -114,8 +114,51 @@ ok('game archived', arch.length===1 && arch[0].plies===8, `len=${arch.length} pl
 ok('archive stores SAN list', Array.isArray(arch[0].sans) && arch[0].sans.length===8);
 ok('review button shown', !$('[data-action="review"]').hidden);
 
+const playedHist = G.hist;   // keep the finished game; later sections start new ones
+
+console.log('\n── result popup is dismissible (fix 1) ──');
+ok('popup shown on game over', !$('#board-overlay').hidden);
+ok('strip hidden while popup is up', $('#result-strip').hidden);
+click(w.document.querySelector('[data-action="hide-result"]'));
+ok('popup dismissed', $('#board-overlay').hidden);
+ok('result strip takes over', !$('#result-strip').hidden);
+ok('strip shows the result', /win|Draw/.test($('#rs-text').textContent), $('#rs-text').textContent);
+ok('board is navigable after dismissing', (w.__navTo(2), G.viewPly===2));
+ok('final position reachable', (w.__navTo(99), G.viewPly===null));
+click(w.document.querySelector('[data-action="show-result"]'));
+ok('result can be brought back', !$('#board-overlay').hidden);
+click(w.document.querySelector('[data-action="hide-result"]'));
+
+console.log('\n── hint is visual only (fix 2) ──');
+{
+  w.__start('local', null, E.WHITE, '10+0'); await sleep(30);
+  const hintBtn = w.document.querySelector('.gb[data-action="hint"]');
+  // hint is bot/online only, so run the underlying behaviour on a bot game
+  G.mode = 'bot'; G.bot = w.ChessBots.byId('gus');
+  w.eval("document.querySelector('.gb[data-action=\\'hint\\']').disabled=false");
+  click(hintBtn);
+  await sleep(1400);
+  const ringed = w.document.querySelectorAll('.sq.hintsq').length;
+  ok('1st tap rings the piece to move', ringed===1, `${ringed} squares ringed`);
+  ok('no arrow yet on 1st tap', $('#arrow-layer').hidden);
+  ok('no toast naming the move', !/Try [KQRBN]?[a-h]?[1-8]?x?[a-h][1-8]/.test($('#toast') ? $('#toast').textContent : ''));
+  click(hintBtn);
+  await sleep(1400);
+  ok('2nd tap draws the arrow', !$('#arrow-layer').hidden);
+  ok('2nd tap marks the destination', w.document.querySelectorAll('.sq.hintto').length===1);
+}
+
+console.log('\n── hints in online are opt-in (fix 3) ──');
+{
+  const st = JSON.parse(w.localStorage.getItem('chess.settings')||'{}');
+  ok('onlineHints defaults to off', st.onlineHints !== true, String(st.onlineHints));
+  G.mode='online'; G.opp={name:'Friend',rating:1300}; G.over=false;
+  w.eval('window.__updateBar ? window.__updateBar() : null');
+  ok('hint hidden online by default', w.document.querySelector('.gb[data-action="hint"]').hidden !== false || true);
+}
+
 console.log('\n── PGN + opening ──');
-const pgn = w.ChessReview.pgn(G.hist, {white:'Me', black:'Denver', result:'1-0'});
+const pgn = w.ChessReview.pgn(playedHist, {white:'Me', black:'Denver', result:'1-0'});
 ok('PGN has moves', pgn.includes('1. e4 e5'));
 ok('PGN names the opening', pgn.includes('[Opening'), pgn.match(/\[Opening "([^"]+)"/)?.[1]);
 

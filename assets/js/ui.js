@@ -174,6 +174,8 @@
         var p = g.board[sq];
         if (p && E.typeOf(p) === E.KING && g.isAttacked(sq, E.colorOf(p) ^ 1)) cls += ' check';
 
+        if (this.marks && this.marks[sq]) cls += ' ' + this.marks[sq];
+
         d.className = cls;
         d.innerHTML = '';
 
@@ -285,6 +287,23 @@
 
   Board.prototype.clearArrow = function () {
     if (this.arrowEl) { this.arrowEl.innerHTML = ''; this.arrowEl.hidden = true; }
+  };
+
+  /** ring a square so the player can see *which piece* without being told the move.
+      Marks are kept on the board object so they survive a re-render (picking the
+      piece up should not make the hint disappear). */
+  Board.prototype.markSquare = function (sq, cls) {
+    if (!this.marks) this.marks = {};
+    this.marks[sq] = cls || 'hintsq';
+    var el = this._squares[this.vIndex(sq)];
+    if (el) el.classList.add(this.marks[sq]);
+  };
+
+  Board.prototype.clearMarks = function () {
+    this.marks = {};
+    for (var i = 0; i < this._squares.length; i++) {
+      this._squares[i].classList.remove('hintsq', 'hintto');
+    }
   };
 
   /* ─────────────────────────────────────────────── pointer handling ─── */

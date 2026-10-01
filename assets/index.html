@@ -128,7 +128,7 @@
       <div class="stat"><div class="stat-val" id="hm-b">–</div><div class="stat-key">Best win</div></div>
     </div>
 
-    <div class="home-foot">Chess · v1.4</div>
+    <div class="home-foot">Chess · v1.5</div>
   </div>
 </section>
 
@@ -219,6 +219,11 @@
     <button class="btn btn-ghost" id="test-key">Test connection</button>
 
     <div class="section-label">Online</div>
+    <div class="toggle-list" style="margin-top:0">
+      <label class="toggle-row"><span>Allow hints in online games</span><input type="checkbox" id="opt-onlineHints"><i></i></label>
+    </div>
+    <div class="hint-line">Off by default: an engine hint against a human is assistance. When on, your opponent is told in chat each time you use one.</div>
+
     <label class="field-label" for="srv-url">Relay server URL</label>
     <input class="text-input" id="srv-url" type="url" placeholder="wss://your-relay.onrender.com"
            autocomplete="off" spellcheck="false" inputmode="url">
@@ -372,12 +377,16 @@
         <svg class="arrow-layer" id="arrow-layer" viewBox="0 0 100 100" preserveAspectRatio="none" hidden></svg>
         <div class="board-overlay" id="board-overlay" hidden>
           <div class="overlay-card">
+            <button class="ov-close" data-action="hide-result" aria-label="Close">
+              <svg class="ic"><use href="#i-x"/></svg>
+            </button>
             <div class="overlay-icon" id="ov-icon">♚</div>
             <div class="overlay-title" id="ov-title">Game over</div>
             <div class="overlay-sub" id="ov-sub"></div>
             <div class="overlay-actions">
               <button class="btn btn-primary" data-action="rematch">Rematch</button>
               <button class="btn btn-accent" data-action="review">Game Review</button>
+              <button class="btn btn-ghost" data-action="hide-result">Look at the board</button>
               <button class="btn btn-ghost" data-action="leave-game">Exit</button>
             </div>
           </div>
@@ -398,6 +407,13 @@
     <div class="evalbar" id="evalbar" hidden>
       <i id="eval-fill"></i>
       <span class="eval-num" id="eval-num">0.0</span>
+    </div>
+
+    <div class="result-strip" id="result-strip" hidden>
+      <span class="rs-icon" id="rs-icon">♚</span>
+      <span class="rs-text" id="rs-text">Game over</span>
+      <button class="rs-btn" data-action="review">Review</button>
+      <button class="rs-btn rs-ghost" data-action="show-result">Result</button>
     </div>
 
     <div class="browse-pill" id="browse-pill" hidden>
