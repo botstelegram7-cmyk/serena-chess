@@ -107,4 +107,22 @@ console.log('  unique ids / names:', (uniqIds && uniqNames) ? 'yes' : 'NO');
 console.log('  largest elo gap:', gap);
 console.log('  entries missing fields:', fields.length ? fields.map(function(b){return b.id;}).join(',') : 'none');
 console.log('  entries with bad style weights:', badStyle.length ? badStyle.map(function(b){return b.id;}).join(',') : 'none');
+var fs = require('fs'), pathm = require('path');
+var AVDIR = pathm.join(__dirname, '..', 'assets');
+/* Every character needs real artwork. Placeholder monogram tiles are flat
+   colour and compress to about 2 KB, while an illustrated 220x220 portrait
+   never does -- that difference is the cheapest reliable way to notice a
+   placeholder that was never replaced, which is exactly what shipped in
+   1.6 and had to be fixed in 1.7.1. */
+var MIN_ART_BYTES = 4500;   /* placeholder tiles ~2.2 KB, thinnest real portrait ~6.0 KB */
+var noFile = [], tooFlat = [];
+BOTS.BOTS.forEach(function (b) {
+  var p = pathm.join(AVDIR, b.avatar);
+  if (!fs.existsSync(p)) { noFile.push(b.id); return; }
+  if (fs.statSync(p).size < MIN_ART_BYTES) tooFlat.push(b.id);
+});
+console.log('  avatars missing:', noFile.length ? noFile.join(',') : 'none');
+console.log('  avatars that look like placeholders:', tooFlat.length ? tooFlat.join(',') : 'none');
+if (noFile.length || tooFlat.length) process.exitCode = 1;
+
 if (!sorted || !uniqIds || !uniqNames || gap > 150 || fields.length || badStyle.length) process.exitCode = 1;

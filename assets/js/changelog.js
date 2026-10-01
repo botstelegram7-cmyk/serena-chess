@@ -5,10 +5,16 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.7';
-  var BUILD = 8;
+  var VERSION = '1.7.1';
+  var BUILD = 9;
 
   var LOG = [
+    { v: '1.7.1', date: '2026-10-01', title: 'All 60 characters illustrated',
+      items: [
+        ['fix', 'Eight characters were still showing a plain lettered tile instead of a portrait. Wednesday, Homelander, Gojo, Ragnar, Lelouch, Tyrion, Aizen and Mycroft now have their artwork, so every one of the 60 opponents is illustrated.'],
+        ['note', 'The test suite now refuses to build if any character avatar is missing or is still a placeholder, so this cannot happen again unnoticed.']
+      ] },
+
     { v: '1.7', date: '2026-10-01', title: 'Your profile, your face',
       items: [
         ['new', 'Set a profile picture from your gallery. Tap your avatar on the profile screen and pick any photo; it is cropped square, resized and stored on the device.'],

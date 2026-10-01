@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.7.1 — 2026-10-01
+
+- **All 60 characters are now illustrated.** Wednesday, Homelander, Gojo,
+  Ragnar, Lelouch, Tyrion, Aizen and Mycroft were still rendering as plain
+  lettered placeholder tiles; they now have portraits in the same style as
+  the rest of the roster.
+- `tests/style_test.js` now fails if any character's avatar file is missing
+  or is small enough to be a placeholder, so an unreplaced tile cannot ship
+  again. Placeholder tiles compress to about 2 KB; the thinnest real
+  portrait in the roster is 6 KB, and the threshold sits between them.
+
+
 ## 1.7 — 2026-10-01
 
 - **Profile pictures.** Tap your avatar on the profile screen and choose any
