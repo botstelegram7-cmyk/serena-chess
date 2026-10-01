@@ -23,11 +23,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up the Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install build tools
-        run: sdkmanager --install "platforms;android-33" "build-tools;33.0.2"
+      # build.sh fetches the exact build-tools and platform it needs itself,
+      # so CI needs nothing but a JDK -- and it then builds the APK by the
+      # identical path used to build it locally. The setup-android action was
+      # tried here and fails: it still installs the retired 'tools' package.
 
       # The API key is injected at build time and is never in the repository.
       # Without the secret the app simply ships with an empty key field, which
