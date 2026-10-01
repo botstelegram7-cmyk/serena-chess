@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ replaced fullBackupContent with this split format so that cloud
+  backup and direct device-to-device transfer can be configured separately.
+  Both are allowed here: the player's games should survive a new phone either
+  way. The API key is excluded from the cloud copy for the same reason as in
+  backup_rules.xml, because a credential should not be synced off the device.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="." />
+        <include domain="file" path="app_webview" />
+        <exclude domain="sharedpref" path="serena_secrets.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="." />
+        <include domain="file" path="app_webview" />
+    </device-transfer>
+</data-extraction-rules>

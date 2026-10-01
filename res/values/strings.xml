@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Chess</string>
+    <string name="sc_resume_short">Continue</string>
+    <string name="sc_resume_long">Continue your game</string>
+    <string name="sc_daily_short">Daily</string>
+    <string name="sc_daily_long">Daily puzzle</string>
+    <string name="sc_bots_short">Play</string>
+    <string name="sc_bots_long">Play a character</string>
 </resources>

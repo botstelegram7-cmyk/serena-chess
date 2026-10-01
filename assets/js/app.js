@@ -63,13 +63,81 @@
     preset: 'classic', board: 'green', piece: 'classic', bg: 'classic', sound: 'default',
     anim: true, coords: true, hints: true, last: true, autoq: false, tc: '10+0',
     chat: true, groqKey: CHAT.DEFAULT_KEY, notify: false, notifyAt: '19:00',
-    srvUrl: '', onlineHints: false, hintStyle: 'both', humanElo: 1200
+    srvUrl: '', onlineHints: false, hintStyle: 'both', humanElo: 1200,
+    haptics: true, premove: true, googleClientId: ''
   }, Store.get('chess.settings', {}));
 
   function saveProfile()  { Store.set('chess.profile', profile); }
   function saveStats()    { Store.set('chess.stats', stats); }
   function saveSettings() { Store.set('chess.settings', settings); }
   function saveArchive()  { Store.set('chess.archive', archive.slice(0, 40)); }
+
+  /* ── v1.8 progression, account and chart modules ──────────────────── */
+  var PR  = window.ChessProgress;
+  var ACC = window.ChessAccount;
+  var CH  = window.ChessCharts;
+
+  /* If any of the three failed to load, the app must still play chess. One
+     missing script should cost you the progress screens, not the whole app. */
+  var HAVE_PROGRESS = !!(PR && ACC && CH);
+
+  var puzState = HAVE_PROGRESS ? (Store.get('chess.puzzles', null) || PR.blankPuzzleState()) : null;
+  var dayState = Store.get('chess.daily', null) || { last: null, streak: 0, best: 0, solvedDays: [] };
+  var ladState = HAVE_PROGRESS ? (Store.get('chess.ladder', null) || PR.blankLadder()) : null;
+  var achState = Store.get('chess.achievements', null) || {};
+  var account  = HAVE_PROGRESS ? (Store.get('chess.account', null) || ACC.blankAccount()) : null;
+
+  function savePuz()  { Store.set('chess.puzzles', puzState); }
+  function saveDay()  { Store.set('chess.daily', dayState); }
+  function saveLad()  { Store.set('chess.ladder', ladState); }
+  function saveAch()  { Store.set('chess.achievements', achState); }
+  function saveAcct() { Store.set('chess.account', account); }
+
+  function botList() {
+    var b = window.ChessBots || window.BOTS;
+    return (b && b.BOTS) || (Array.isArray(b) ? b : []);
+  }
+
+  /* Short vibrations on board events. Routed through the native bridge when
+     present and the web API otherwise, so it also works in a browser. */
+  function buzz(ms) {
+    if (!settings.haptics) return;
+    try {
+      if (window.AndroidHaptics && window.AndroidHaptics.tap) { window.AndroidHaptics.tap(ms || 18); return; }
+      if (navigator.vibrate) navigator.vibrate(ms || 18);
+    } catch (e) { /* vibration is never important enough to throw */ }
+  }
+
+  /* Rather than sprinkling buzz() through the move code, piggyback on the
+     sound layer: every event worth hearing is an event worth feeling, and
+     this stays correct automatically as new sounds are added. */
+  function wireHaptics() {
+    if (!UI || !UI.Sound || typeof UI.Sound.play !== 'function' || UI.Sound.__haptic) return;
+    var orig = UI.Sound.play.bind(UI.Sound);
+    var STRENGTH = { move: 12, capture: 20, castle: 18, check: 28,
+                     promote: 24, illegal: 32, end: 38, lowtime: 26 };
+    UI.Sound.play = function (name) {
+      if (STRENGTH[name] != null) buzz(STRENGTH[name]);
+      return orig.apply(null, arguments);
+    };
+    UI.Sound.__haptic = true;
+  }
+
+  /* The human model plays worse on a low clock. There is no single clock
+     object to read, so this probes the shapes the app has used and gives up
+     quietly -- a wrong guess here would make bots randomly worse. */
+  function botClockMs() {
+    try {
+      var c = G.clocks || G.clock;
+      if (!c) return null;
+      var side = (G.myColor === 0) ? 'b' : 'w';
+      var v = c[side];
+      if (v && typeof v.ms === 'number') return v.ms;
+      if (typeof v === 'number') return v;
+    } catch (e) { /* no clock */ }
+    return null;
+  }
+
 
   /* ───────────────────────────────────────────────────────── screens ─── */
   var current = 'home';
@@ -83,6 +151,9 @@
     if (name === 'settings') refreshSettingsValues();
     if (name === 'puzzles') loadPuzzle(puz.idx);
     if (name === 'whatsnew') renderWhatsNew();
+    if (name === 'progress') renderProgress();
+    if (name === 'ladder')   renderLadder();
+    if (name === 'account')  renderAccount();
   }
 
   function copyText(t) {
@@ -682,29 +753,38 @@
     var started = Date.now();
 
     setTimeout(function () {
-      var g = G.game, mv = null;
+      var g = G.game;
       var hist = G.moves.map(function (m) { return m.san; });
       var last = G.moves.length ? G.moves[G.moves.length - 1] : null;
-      if (G.bot && G.bot.human) G.bot.lastTo = last ? last.to : -1;
-      try { mv = AI.pickMove(g, G.bot, hist); }
-      catch (err) { mv = g.moves()[0] || null; }
-
-      /* A person does not answer in a constant 300 ms. Forced recaptures come
-         back instantly, hard positions get a long stare. */
-      var want = 300;
       if (G.bot && G.bot.human) {
-        var forced = g.moves().length <= 2 ||
-                     (last && mv && mv.to === last.to && (mv.flags & E.FLAG_CAPTURE));
-        want = HU.thinkMs(g, G.bot, forced);
+        G.bot.lastTo = last ? last.to : -1;
+        G.bot.msLeft = botClockMs();     /* lets the model feel the clock */
       }
-      var pause = Math.max(0, want - (Date.now() - started));
-      setTimeout(function () {
-        $('#top-thinking').hidden = true;
-        G.thinking = false;
-        if (G.over) return;
-        if (!mv) { finishGame(g.status()); return; }
-        applyMove(mv, false);
-      }, pause);
+
+      /* The search yields between slices rather than holding the thread for
+         its whole budget, so the clock keeps ticking, animations keep running
+         and taps keep landing while a bot thinks. */
+      G.search = AI.pickMoveAsync(g, G.bot, hist, function (mv) {
+        G.search = null;
+        if (!mv) { try { mv = g.moves()[0] || null; } catch (e2) { mv = null; } }
+
+        /* A person does not answer in a constant 300 ms. Forced recaptures come
+           back instantly, hard positions get a long stare. */
+        var want = 300;
+        if (G.bot && G.bot.human) {
+          var forced = g.moves().length <= 2 ||
+                       (last && mv && mv.to === last.to && (mv.flags & E.FLAG_CAPTURE));
+          want = HU.thinkMs(g, G.bot, forced);
+        }
+        var pause = Math.max(0, want - (Date.now() - started));
+        setTimeout(function () {
+          $('#top-thinking').hidden = true;
+          G.thinking = false;
+          if (G.over) return;
+          if (!mv) { finishGame(g.status()); return; }
+          applyMove(mv, false);
+        }, pause);
+      });
     }, 40);
   }
 
@@ -808,6 +888,7 @@
       saveStats();
       delta = applyRating(oppRating(), score);
       archiveGame(st, score, delta);
+      onGameFinished(score);
     }
 
     $('#ov-icon').textContent = icon;
@@ -1799,7 +1880,7 @@
     var list = PZ.PUZZLES;
     puz.idx = ((i % list.length) + list.length) % list.length;
     var p = list[puz.idx];
-    puz.cur = p; puz.done = false;
+    puz.cur = p; puz.done = false; puz.missed = false;
 
     pboard.opts.set = settings.piece; pboard.opts.theme = settings.board;
     pboard.opts.coords = settings.coords; pboard.opts.hints = settings.hints;
@@ -1833,11 +1914,15 @@
         puz.solved.push(puz.cur.id);
         Store.set('chess.solved', puz.solved);
       }
+      scorePuzzleAttempt(puz.cur, !puz.missed);
       $('#puz-solved').textContent = 'Solved ' + puz.solved.length;
       setPuzStatus('Correct — ' + san, 'good');
       setTimeout(function () { if (current === 'puzzles') loadPuzzle(puz.idx + 1); }, 1500);
     } else {
       UI.Sound.play('illegal');
+      /* Only the first miss on a puzzle counts, or a player who guesses three
+         times in a row would lose three times the rating for one failure. */
+      if (!puz.missed) { puz.missed = true; scorePuzzleAttempt(puz.cur, false); }
       setPuzStatus('Not quite. Try again.', 'bad');
       pboard.render();
     }
@@ -1947,6 +2032,18 @@
     var a = act.dataset.action;
 
     if (a === 'chat') { openChat(); return; }
+
+    /* ------------------------------------------------- v1.8 ------- */
+    if (a === 'daily')       { openDaily(); return; }
+    if (a === 'ladder-play') {
+      var lb = BOTS.byId(act.dataset.bot);
+      if (lb) startGame('bot', lb, E.WHITE, settings.tc);
+      return;
+    }
+    if (a === 'backup-export')  { exportBackup(); return; }
+    if (a === 'backup-import')  { var rf = $('#restore-file'); if (rf) rf.click(); return; }
+    if (a === 'backup-confirm') { doRestore(); return; }
+    if (a === 'google-signin')  { toast('Add a Google client id in Settings first.', 2600); return; }
 
     if (a === 'puzzle-skip')     { loadPuzzle(puz.idx + 1); return; }
     if (a === 'puzzle-retry')    { loadPuzzle(puz.idx); return; }
@@ -2289,6 +2386,319 @@
      cannot drift apart silently. */
   var KIND = { 'new': 'New', 'fix': 'Fixed', 'gone': 'Removed', 'note': 'Note' };
 
+  /* ══════════════════════════════════════════ v1.8 progression UI ═══ */
+
+  function esc(t) {
+    return CH ? CH.esc(t) : String(t).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function openingNamer(sans) {
+    try {
+      var RV = window.ChessReview;
+      if (RV && RV.openingInfo) {
+        var i = RV.openingInfo(sans);
+        if (i && i.name) return i.name;
+      }
+    } catch (e) { /* fall back to the first moves */ }
+    if (!sans || !sans.length) return 'Other';
+    return sans.slice(0, 2).join(' ');
+  }
+
+  /** One attempt at a puzzle, scored once. */
+  function scorePuzzleAttempt(p, solved) {
+    if (!HAVE_PROGRESS) return;
+    if (!p) return;
+    puzState = PR.scorePuzzle(puzState, p, solved);
+    savePuz();
+    var dp = PR.dailyPuzzle(PZ.PUZZLES);
+    if (dp && dp.id === p.id) { dayState = PR.recordDaily(dayState, !!solved); saveDay(); }
+    if (solved && puzState.delta) toast('Puzzle rating ' + (puzState.delta > 0 ? '+' : '') + puzState.delta, 1400);
+    checkAchievements();
+  }
+
+  function openDaily() {
+    if (!HAVE_PROGRESS) return;
+    var dp = PR.dailyPuzzle(PZ.PUZZLES);
+    if (!dp) return;
+    var i = PZ.PUZZLES.indexOf(dp);
+    if (i >= 0) { puz.idx = i; Store.set('chess.puzIdx', i); }
+    go('puzzles');
+  }
+
+  function onGameFinished(score) {
+    if (!HAVE_PROGRESS) return;
+    try {
+      if (G.mode === 'bot' && G.bot && G.bot.id && !G.bot.human) {
+        ladState = PR.recordLadder(botList(), ladState, G.bot.id, score === 1);
+        saveLad();
+      }
+      checkAchievements();
+    } catch (e) { /* progression must never break the end-of-game flow */ }
+  }
+
+  function checkAchievements() {
+    if (!HAVE_PROGRESS) return;
+    try {
+      var ls = PR.ladderSummary(botList(), ladState);
+      var r = PR.evaluateAchievements({
+        stats: stats, archive: archive, profile: profile,
+        puzzles: puzState, daily: dayState,
+        ladder: { beaten: ls.beaten, total: ls.total },
+        drillsDone: (Store.get('chess.drillsDone', []) || []).length,
+        drillsTotal: (PZ.DRILLS || []).length,
+        reviewed: Store.get('chess.reviewed', 0)
+      }, achState);
+      achState = r.earned;
+      saveAch();
+      if (r.fresh.length) {
+        toast(r.fresh.length === 1 ? 'Unlocked: ' + r.fresh[0].name
+                                   : r.fresh.length + ' achievements unlocked', 2600);
+        buzz(34);
+      }
+    } catch (e) { /* never let a badge break a game */ }
+  }
+
+  /* ─────────────────────────────────────────────── progress screen ─── */
+
+  function renderProgress() {
+    if (!HAVE_PROGRESS) return;
+    var host = $('#pg-body');
+    if (!host) return;
+    var h = [];
+
+    /* daily puzzle */
+    var dp = PR.dailyPuzzle(PZ.PUZZLES);
+    var doneToday = dayState.last === PR.today() && dayState.streak > 0;
+    h.push('<div class="pg-card"><h3>Daily puzzle</h3>');
+    h.push('<div class="pg-big"><b>' + (dayState.streak || 0) + '</b><span>day streak' +
+           (dayState.best ? ' · best ' + dayState.best : '') + '</span></div>');
+    h.push('<div class="pg-sub">' + (doneToday
+      ? 'Solved today. The next one arrives at midnight.'
+      : 'Today&rsquo;s puzzle is waiting' + (dp ? ' · rated ' + (dp.rating || '?') : '') + '.') + '</div>');
+    if (!doneToday) h.push('<button class="btn btn-primary row-btn" data-action="daily" style="margin-top:11px">' +
+      '<svg class="ic"><use href="#i-flame"/></svg><span>Solve today&rsquo;s puzzle</span></button>');
+    h.push('</div>');
+
+    /* rating over time */
+    var series = CH.ratingSeries(archive, profile.rating);
+    h.push('<div class="pg-card"><h3>Rating</h3>');
+    h.push('<div class="pg-big"><b>' + (profile.rating || 1200) + '</b><span>' +
+           (stats.w + stats.l + stats.d) + ' games played</span></div>');
+    var chart = CH.ratingChart(series, { w: 320, h: 104 });
+    h.push(chart || '<div class="pg-empty">Play a few rated games and your rating curve will appear here.</div>');
+    h.push('<div class="pg-grid" style="margin-top:10px">' +
+      '<div><b>' + stats.w + '</b><span>won</span></div>' +
+      '<div><b>' + stats.d + '</b><span>drawn</span></div>' +
+      '<div><b>' + stats.l + '</b><span>lost</span></div></div>');
+    h.push('</div>');
+
+    /* puzzle strength by theme */
+    h.push('<div class="pg-card"><h3>Puzzles</h3>');
+    h.push('<div class="pg-big"><b>' + puzState.rating + '</b><span>puzzle rating · ' +
+           puzState.solved + ' solved</span></div>');
+    var themes = PR.themeBreakdown(puzState);
+    if (!themes.length) {
+      h.push('<div class="pg-empty">Solve some puzzles and your strength in each theme will show up here.</div>');
+    } else {
+      themes.forEach(function (t) {
+        h.push('<div class="pg-row"><span class="nm">' + esc(t.kind) + '</span>' +
+               '<span class="vl">' + t.rating + ' · ' + t.pct + '%</span></div>' +
+               CH.meter(t.pct, t.kind + ' ' + t.pct + ' per cent'));
+      });
+    }
+    h.push('</div>');
+
+    /* openings actually played */
+    var ops = CH.openingStats(archive, openingNamer, 1);
+    h.push('<div class="pg-card"><h3>Your openings</h3>');
+    if (!ops.length) {
+      h.push('<div class="pg-empty">Once you have a few games in the archive, this shows which openings you actually score with.</div>');
+    } else {
+      ops.slice(0, 8).forEach(function (o) {
+        h.push('<div class="pg-row"><span class="nm">' + esc(o.name) + '</span>' +
+               CH.wdlBar(o) + '<span class="vl">' + o.pct + '%</span></div>');
+      });
+    }
+    h.push('</div>');
+
+    /* achievements */
+    var got = Object.keys(achState).length;
+    h.push('<div class="pg-card"><h3>Achievements ' + got + ' / ' + PR.ACHIEVEMENTS.length + '</h3>');
+    PR.ACHIEVEMENTS.forEach(function (a) {
+      h.push('<div class="ach' + (achState[a.id] ? ' got' : '') + '">' +
+             '<svg class="ic"><use href="#i-trophy"/></svg><div><div class="nm">' + esc(a.name) +
+             '</div><div class="ds">' + esc(a.desc) + '</div></div></div>');
+    });
+    h.push('</div>');
+
+    host.innerHTML = h.join('');
+  }
+
+  /* ───────────────────────────────────────────────── ladder screen ─── */
+
+  function renderLadder() {
+    if (!HAVE_PROGRESS) return;
+    var host = $('#ld-body');
+    if (!host) return;
+    var rows = PR.ladderState(botList(), ladState);
+    var sum = PR.ladderSummary(botList(), ladState);
+    var h = [];
+    h.push('<div class="pg-card"><h3>The climb</h3>');
+    h.push('<div class="pg-big"><b>' + sum.beaten + ' / ' + sum.total + '</b><span>characters beaten</span></div>');
+    h.push(CH.meter(sum.pct, sum.pct + ' per cent complete'));
+    h.push('<div class="pg-sub">' + (sum.next
+      ? 'Next up: ' + esc(sum.next.bot.name) + ' at ' + sum.next.bot.elo + '.'
+      : 'Every character has been beaten. There is nobody left.') +
+      ' Beat an opponent to unlock the one above. Losing never costs you a rung.</div>');
+    h.push('</div>');
+    h.push('<div class="pg-card">');
+    rows.forEach(function (r) {
+      h.push('<div class="ld-row' + (r.beaten ? ' done' : '') + (r.open ? '' : ' locked') +
+             '"' + (r.open ? ' data-action="ladder-play" data-bot="' + esc(r.bot.id) + '"' : '') + '>' +
+             '<span class="ld-rung">' + r.rung + '</span>' +
+             '<img src="' + esc(r.bot.avatar) + '" alt="">' +
+             '<span class="nm">' + esc(r.bot.name) + '</span>' +
+             '<span class="el">' + r.bot.elo + '</span></div>');
+    });
+    h.push('</div>');
+    host.innerHTML = h.join('');
+  }
+
+  /* ──────────────────────────────────────────────── account screen ─── */
+
+  function renderAccount(extra) {
+    if (!HAVE_PROGRESS) return;
+    var host = $('#ac-body');
+    if (!host) return;
+    var h = [];
+    var initial = (profile.name || 'P').trim().charAt(0).toUpperCase();
+
+    h.push('<div class="pg-card">');
+    h.push('<div class="ac-id"><div class="av"' +
+      (profile.photo ? ' style="background-image:url(' + profile.photo + ')"' : '') + '>' +
+      (profile.photo ? '' : esc(initial)) + '</div><div><div style="font-weight:600">' +
+      esc(profile.name || 'Unnamed player') + '</div><div class="pg-sub">' +
+      esc(ACC.label(account)) + '</div></div></div>');
+    h.push('<div class="ac-note">This app has no server and no user database, so there is no account to create and nothing of yours stored anywhere but on this phone. Your games, rating and settings live here.</div>');
+    h.push('</div>');
+
+    h.push('<div class="pg-card"><h3>Keep your progress</h3>');
+    h.push('<div class="ac-note" style="margin-top:0">Android already backs this app up to your Google account, so a new phone restores your games automatically during setup. For anything else &mdash; moving to a different phone later, or just keeping a copy &mdash; export a backup file.</div>');
+    h.push('<button class="btn btn-primary row-btn" data-action="backup-export" style="margin-top:12px">' +
+           '<svg class="ic"><use href="#i-cloud"/></svg><span>Export a backup</span></button>');
+    h.push('<button class="btn btn-ghost row-btn" data-action="backup-import" style="margin-top:8px">' +
+           '<svg class="ic"><use href="#i-cloud"/></svg><span>Restore from a backup</span></button>');
+    if (extra) h.push(extra);
+    h.push('</div>');
+
+    if (ACC.googleEnabled(settings)) {
+      h.push('<div class="pg-card"><h3>Google</h3>' +
+        '<button class="btn btn-ghost row-btn" data-action="google-signin">' +
+        '<svg class="ic"><use href="#i-cloud"/></svg><span>' +
+        (account.kind === 'google' ? 'Signed in as ' + esc(account.email) : 'Sign in with Google') +
+        '</span></button></div>');
+    }
+    host.innerHTML = h.join('');
+  }
+
+  function exportBackup() {
+    if (!HAVE_PROGRESS) return;
+    var body = ACC.buildBackup(function (k) { return Store.get(k, null); },
+                               { version: CL.VERSION, build: CL.BUILD });
+    var txt = JSON.stringify(body, null, 2);
+    var name = ACC.backupFilename(body);
+    try {
+      if (window.AndroidShare && window.AndroidShare.share) {
+        window.AndroidShare.share(txt);
+        toast('Backup ready to save or send', 2400);
+        return;
+      }
+    } catch (e) { /* fall through to a download */ }
+    try {
+      var a = document.createElement('a');
+      a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(txt);
+      a.download = name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      toast('Backup downloaded', 2000);
+    } catch (e2) { copyText(txt); toast('Backup copied to the clipboard', 2400); }
+  }
+
+  var pendingRestore = null;
+
+  function offerRestore(obj) {
+    if (!HAVE_PROGRESS) return;
+    var v = ACC.validateBackup(obj);
+    if (!v.ok) { pendingRestore = null; renderAccount(
+      '<div class="ac-note" style="color:#e08b84">' + esc(v.why) + '</div>'); return; }
+    pendingRestore = obj;
+    var s2 = v.summary;
+    renderAccount('<div class="ac-note" style="margin-top:14px">' +
+      '<b>' + esc(s2.name) + '</b> &middot; rating ' + s2.rating + ' &middot; ' +
+      s2.games + ' games &middot; ' + s2.archived + ' archived &middot; ' +
+      s2.puzzles + ' puzzles solved' + (s2.when ? '<br>Backed up ' + esc(s2.when) : '') +
+      '<br><br>Restoring replaces everything currently on this phone. This cannot be undone.</div>' +
+      '<button class="btn btn-danger row-btn" data-action="backup-confirm" style="margin-top:10px">' +
+      '<span>Replace my data with this backup</span></button>');
+  }
+
+  function doRestore() {
+    if (!HAVE_PROGRESS) return;
+    if (!pendingRestore) return;
+    var r = ACC.applyBackup(pendingRestore, function (k) { return Store.get(k, null); },
+                            function (k, v) { Store.set(k, v); });
+    pendingRestore = null;
+    if (!r.ok) { toast(r.why, 3000); return; }
+    toast('Restored. Reloading\u2026', 1600);
+    setTimeout(function () { location.reload(); }, 1200);
+  }
+
+  function wireV18() {
+    wireHaptics();
+    if (!HAVE_PROGRESS) return;
+
+    var h = $('#opt-haptics');
+    if (h) {
+      h.checked = settings.haptics !== false;
+      h.addEventListener('change', function () {
+        settings.haptics = h.checked; saveSettings();
+        if (h.checked) buzz(22);
+      });
+    }
+
+    var rf = $('#restore-file');
+    if (rf) {
+      rf.addEventListener('change', function () {
+        var f = rf.files && rf.files[0];
+        rf.value = '';
+        if (!f) return;
+        var fr = new FileReader();
+        fr.onload = function () {
+          var obj = null;
+          try { obj = JSON.parse(String(fr.result)); }
+          catch (e) { obj = null; }
+          offerRestore(obj);
+        };
+        fr.onerror = function () { offerRestore(null); };
+        fr.readAsText(f);
+      });
+    }
+  }
+
+  /* A launcher shortcut leaves its target in shared preferences for the page
+     to collect once, so a long-press on the icon can open straight into the
+     daily puzzle instead of the home screen. */
+  function handleShortcut() {
+    var t = null;
+    try { if (window.AndroidStore && window.AndroidStore.load) t = window.AndroidStore.load('shortcut'); }
+    catch (e) { return; }
+    if (!t) return;
+    try { if (window.AndroidStore.save) window.AndroidStore.save('shortcut', ''); } catch (e) {}
+    if (t === 'daily') openDaily();
+    else if (t === 'bots' && $('#screen-bots')) go('bots');
+  }
+
   function renderWhatsNew() {
     var host = $('#wn-body');
     if (!host || host.dataset.built === CL.VERSION) return;
@@ -2396,8 +2806,8 @@
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () {
-      boot(); stampVersion(); signBuild(); guardCredits(); announceUpdate();
+      boot(); stampVersion(); signBuild(); guardCredits(); wireV18(); announceUpdate(); handleShortcut();
     });
-  } else { boot(); stampVersion(); signBuild(); guardCredits(); announceUpdate(); }
+  } else { boot(); stampVersion(); signBuild(); guardCredits(); wireV18(); announceUpdate(); handleShortcut(); }
 
 })();

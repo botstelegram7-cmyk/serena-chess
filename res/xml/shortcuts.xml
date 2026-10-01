@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press the launcher icon to jump straight in. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="resume"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/sc_resume_short"
+        android:shortcutLongLabel="@string/sc_resume_long">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.serena.chess"
+            android:targetClass="com.serena.chess.MainActivity"
+            android:data="serena-chess://open/resume">
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="daily"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/sc_daily_short"
+        android:shortcutLongLabel="@string/sc_daily_long">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.serena.chess"
+            android:targetClass="com.serena.chess.MainActivity"
+            android:data="serena-chess://open/daily">
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="bots"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/sc_bots_short"
+        android:shortcutLongLabel="@string/sc_bots_long">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.serena.chess"
+            android:targetClass="com.serena.chess.MainActivity"
+            android:data="serena-chess://open/bots">
+        </intent>
+    </shortcut>
+</shortcuts>

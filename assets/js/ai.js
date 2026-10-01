@@ -505,6 +505,16 @@
     var scored = s.rootScores(bot.depth || 3, bot.timeMs || 800);
     if (!scored.length) return legal[Math.floor(Math.random() * legal.length)];
 
+    return selectFromScored(game, bot, scored, style);
+  }
+
+  /**
+   * Turn a scored root-move list into an actual choice.
+   * Extracted so the synchronous and asynchronous search paths cannot drift
+   * apart — a bot must play identically whichever driver produced the list.
+   */
+  function selectFromScored(game, bot, scored, style) {
+    style = style || bot.style || DEFAULT_STYLE;
     if (style.aggression || style.trade) {
       for (var k = 0; k < scored.length; k++) {
         scored[k].score += styleBias(game, scored[k].move, style);
@@ -539,6 +549,122 @@
     return pool[0].move;
   }
 
+  /* ---------------------------------------------- non-blocking search */
+
+  /**
+   * The synchronous search holds the thread for its entire time budget, so a
+   * three-second think at high Elo freezes the clock, the animations and
+   * every tap. A Web Worker would be the textbook answer, but workers cannot
+   * be constructed from a file:// origin, and serving the assets over a real
+   * origin instead would move localStorage and silently wipe the saved games
+   * of everyone upgrading. So the search is sliced on the main thread: it
+   * runs for a few milliseconds, hands control back so the UI can paint, and
+   * resumes. Same moves, same strength, no freeze.
+   */
+  /* 90ms: the timer clamp costs a fixed ~4ms per yield, so a short slice is
+     dominated by that overhead -- at 20ms it doubled the search time. 90ms
+     keeps the longest block well under the ~100ms that reads as instant,
+     while cutting the yield tax down to a few per cent. Long enough that the ~4ms minimum timer delay
+     costs only about a sixth of the search, short enough that no slice can be
+     felt as a stutter. A MessageChannel yield avoids that 4ms clamp, but it
+     starves timers (the clock stops ticking) and keeps a node process alive
+     forever, which broke the test runner -- so a plain timer it is. */
+  var SLICE_MS = 90;
+
+  function yieldThen(fn) { setTimeout(fn, 0); }
+
+  Search.prototype.rootScoresAsync = function (maxDepth, budgetMs, done) {
+    var self = this, g = this.g;
+    this.stopAt = Date.now() + budgetMs;
+    this.aborted = false;
+
+    var roots = g.moves();
+    if (roots.length === 0) return void done([]);
+
+    var scored = roots.map(function (m) { return { move: m, score: -INF }; });
+    var completed = null, d = 1, i = 0, pass = [];
+
+    function finish() { done(completed || scored); }
+
+    function step() {
+      if (self.cancelled) return void finish();
+      var sliceEnd = Date.now() + SLICE_MS;
+      for (;;) {
+        if (i >= scored.length) {
+          pass.sort(function (a, b) { return b.score - a.score; });
+          scored = pass; completed = pass; self.depthReached = d;
+          var forced = pass.length && pass[0].score > MATE - 100;
+          d++; i = 0; pass = [];
+          if (forced || d > maxDepth || Date.now() > self.stopAt) return void finish();
+          continue;
+        }
+        var m = scored[i].move;
+        g.makeMove(m);
+        var sc = -self.negamax(d - 1, -INF, INF, 1, true);
+        g.undoMove();
+        if (self.aborted) return void finish();
+        pass.push({ move: m, score: sc });
+        i++;
+        if (Date.now() >= sliceEnd) break;
+      }
+      yieldThen(step);
+    }
+    /* Always defer the first slice. A fast search can finish inside one
+       slice, and if that ran inline the callback would fire before this
+       function had even returned -- so the caller could not hold, let alone
+       cancel, the handle. An async API must never sometimes be synchronous. */
+    yieldThen(step);
+  };
+
+  /**
+   * Asynchronous twin of pickMove. Calls back with the chosen move.
+   * Returns a handle with .cancel() so a new game or a takeback can abandon a
+   * search already in flight instead of letting it land on a dead position.
+   */
+  function pickMoveAsync(game, bot, sanHistory, cb) {
+    var handle = { cancelled: false, cancel: function () { this.cancelled = true; } };
+
+    /* The human model and the opening book both answer instantly; defer them
+       by one tick anyway so callers always see consistent async behaviour. */
+    var quick = null, haveQuick = false;
+    try {
+      var legalNow = game.moves();
+      if (legalNow.length === 1) { quick = legalNow[0]; haveQuick = true; }
+    } catch (e) { /* fall through to the search */ }
+
+    if (!haveQuick && bot && bot.human) {
+      try { quick = pickMove(game, bot, sanHistory); haveQuick = true; } catch (e) {}
+    }
+    if (haveQuick) {
+      yieldThen(function () { if (!handle.cancelled) cb(quick); });
+      return handle;
+    }
+
+    var style = (bot && bot.style) || DEFAULT_STYLE;
+    var s = new Search(game, { contempt: (bot && bot.contempt) || 0, style: style });
+    handle.cancel = function () { handle.cancelled = true; s.cancelled = true; s.aborted = true; };
+
+    s.rootScoresAsync((bot && bot.depth) || 3, (bot && bot.timeMs) || 800, function (scored) {
+      if (handle.cancelled) return;
+      if (!scored.length) {
+        var legal = game.moves();
+        return cb(legal.length ? legal[Math.floor(Math.random() * legal.length)] : null);
+      }
+      cb(selectFromScored(game, bot || {}, scored, style));
+    });
+    return handle;
+  }
+
+  /** Asynchronous twin of bestMove, used for hints and the eval bar. */
+  function bestMoveAsync(game, depth, ms, cb) {
+    var s = new Search(game, {});
+    var handle = { cancel: function () { s.cancelled = true; s.aborted = true; } };
+    s.rootScoresAsync(depth || 4, ms || 1200, function (scored) {
+      cb(scored.length ? scored[0].move : null, scored);
+    });
+    return handle;
+  }
+
   /** Quick eval in pawns, from white's point of view (for the eval bar). */
   function quickEval(game) {
     var v = evaluate(game, {});
@@ -553,6 +679,8 @@
   }
 
   var API = { pickMove: pickMove, bestMove: bestMove, evaluate: evaluate,
+              pickMoveAsync: pickMoveAsync, bestMoveAsync: bestMoveAsync,
+              selectFromScored: selectFromScored,
               quickEval: quickEval, Search: Search, VALUE: VALUE, MATE: MATE,
               DEFAULT_STYLE: DEFAULT_STYLE, styleBias: styleBias };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;

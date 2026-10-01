@@ -12,7 +12,12 @@
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
   <symbol id="i-camera" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></symbol>
-  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 4h12v3a6 6 0 0 1-12 0V4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M6 5H3.5v2A3.5 3.5 0 0 0 7 10.5M18 5h2.5v2A3.5 3.5 0 0 1 17 10.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 13v4M8.5 20h7M10 17h4l.8 3H9.2l.8-3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 19V5M4 19h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="m7 15 3.5-4L14 13.5 19 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3s4.5 3.6 4.5 8a4.5 4.5 0 0 1-9 0c0-1.3.4-2.3.9-3.1.3 1 1 1.8 1.9 1.8 1.1 0 1.7-.9 1.7-2.2 0-1.7-.6-3-.0-4.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 21a6 6 0 0 0 6-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 21a6 6 0 0 1-6-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+<symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10a3.5 3.5 0 0 0 .4-7A5 5 0 0 0 8 9.3 3.9 3.9 0 0 0 7 18Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 15.5v-5M9.8 12.3 12 10.2l2.2 2.1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-ladder" viewBox="0 0 24 24"><path d="M8 3v18M16 3v18M8 7h8M8 11h8M8 15h8M8 19h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
   <symbol id="i-sig" viewBox="0 0 24 24"><title>Serena Chess — @TechnicalSerena with @XioquiXin</title><path d="M4 19h16M7 15l5-9 5 9"/></symbol>
   <symbol id="i-bot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 3v5"/><circle cx="12" cy="2.6" r="1.4"/><circle cx="9" cy="13.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="13.5" r="1.3" fill="currentColor" stroke="none"/><path d="M9.5 17h5"/></symbol>
   <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 5.2A3.2 3.2 0 0 1 16 11"/><path d="M18 20c0-2.6-1-4.3-2.6-5.2"/></symbol>
@@ -195,6 +200,38 @@
   <div class="scroll"><div class="wn-wrap" id="wn-body"></div></div>
 </section>
 
+<!-- ═══════════════════════════════════════════════════ PROGRESS ═══ -->
+<section class="screen" id="screen-progress">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Your progress</div>
+    <div class="icon-btn ghost"></div>
+  </header>
+  <div class="scroll"><div class="pg-wrap" id="pg-body"></div></div>
+</section>
+
+<!-- ═════════════════════════════════════════════════════ LADDER ═══ -->
+<section class="screen" id="screen-ladder">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">The climb</div>
+    <div class="icon-btn ghost"></div>
+  </header>
+  <div class="scroll"><div class="pg-wrap" id="ld-body"></div></div>
+</section>
+
+<!-- ════════════════════════════════════════════ ACCOUNT & BACKUP ═══ -->
+<section class="screen" id="screen-account">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Account &amp; backup</div>
+    <div class="icon-btn ghost"></div>
+  </header>
+  <div class="scroll"><div class="pg-wrap" id="ac-body"></div>
+    <input type="file" id="restore-file" accept="application/json,.json" hidden>
+  </div>
+</section>
+
 <!-- ═══════════════════════════════════════════════════ SETTINGS ═══ -->
 <section class="screen" id="screen-settings">
   <header class="app-bar">
@@ -235,6 +272,7 @@
       <label class="toggle-row"><span>Board coordinates</span><input type="checkbox" id="opt-coords" checked><i></i></label>
       <label class="toggle-row"><span>Show legal moves</span><input type="checkbox" id="opt-hints" checked><i></i></label>
       <label class="toggle-row"><span>Highlight last move</span><input type="checkbox" id="opt-last" checked><i></i></label>
+      <label class="toggle-row"><span>Vibration feedback</span><input type="checkbox" id="opt-haptics" checked><i></i></label>
       <label class="toggle-row"><span>Auto-queen promotion</span><input type="checkbox" id="opt-autoq"><i></i></label>
     </div>
 
@@ -291,6 +329,15 @@
       </a>
     </div>
 
+    <button class="btn btn-ghost row-btn" data-go="progress">
+      <svg class="ic"><use href="#i-chart"/></svg><span>Your progress</span>
+    </button>
+    <button class="btn btn-ghost row-btn" data-go="ladder">
+      <svg class="ic"><use href="#i-ladder"/></svg><span>The climb</span>
+    </button>
+    <button class="btn btn-ghost row-btn" data-go="account">
+      <svg class="ic"><use href="#i-cloud"/></svg><span>Account &amp; backup</span>
+    </button>
     <button class="btn btn-ghost row-btn" data-go="whatsnew">
       <svg class="ic"><use href="#i-sparkle"/></svg><span>What&rsquo;s new</span>
     </button>
@@ -775,6 +822,9 @@
 <script src="js/ai.js"></script>
     <script src="js/human.js"></script>
     <script src="js/changelog.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/account.js"></script>
+    <script src="js/charts.js"></script>
 <script src="js/review.js"></script>
 <script src="js/online.js"></script>
 <script src="js/ui.js"></script>

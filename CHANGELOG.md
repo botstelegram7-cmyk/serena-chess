@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.8 — 2026-10-01
+
+### Engine and performance
+- **The search no longer blocks the interface.** `rootScores` held the thread
+  for its entire time budget, so a long think froze the clock, animations and
+  input. `rootScoresAsync` slices the same search and yields between slices.
+  A Web Worker would be the usual answer, but workers cannot be constructed
+  from a `file://` origin and moving the assets to a served origin would
+  relocate `localStorage` and wipe every existing player's data. Measured
+  steady-state overhead is within noise; the longest uninterrupted block drops
+  from the full budget to about 100 ms.
+- Searches are now cancellable, and `pickMoveAsync` is guaranteed asynchronous
+  even when it finishes inside its first slice.
+- Opponents using the human model degrade under time pressure.
+
+### New
+- **Your progress** — rating curve, opening scores, puzzle strength by theme,
+  and 20 achievements, all derived from data already stored.
+- **The climb** — the 60 characters as an unlockable ladder.
+- **Rated puzzles** and a deterministic **daily puzzle** with a streak.
+- **Account & backup** — export and restore a signed, checksummed JSON file.
+- **Haptics**, **launcher shortcuts**, **rating-based online matchmaking**.
+
+### Fixed
+- `targetSdk` raised to 35 with window insets handled, so the layout is correct
+  on Android 15 and the app is publishable on Google Play.
+- The WebView file chooser honoured only `image/*`, so no backup file could
+  ever be selected. It now respects the accept types the page asks for.
+- The relay enforces message rate limits and a maximum frame size.
+- A missing optional script now costs only its own feature instead of
+  white-screening the whole app.
+
+
 ## 1.7.1 — 2026-10-01
 
 - **All 60 characters are now illustrated.** Wednesday, Homelander, Gojo,

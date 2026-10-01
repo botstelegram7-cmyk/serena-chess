@@ -37,6 +37,8 @@ jobs:
 
       - name: Application behaviour
         run: node tests/app_test.js
+      - name: Progression, backup and charts
+        run: node tests/progress_test.js
 
   secrets:
     name: No credentials in the tree

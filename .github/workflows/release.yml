@@ -1,0 +1,85 @@
+name: Build release APK
+
+# Releases were being built and uploaded by hand, which is exactly how a
+# version eventually ships from the wrong commit. Tagging now does it.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    name: Build and attach the APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up the Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install build tools
+        run: sdkmanager --install "platforms;android-33" "build-tools;33.0.2"
+
+      # The API key is injected at build time and is never in the repository.
+      # Without the secret the app simply ships with an empty key field, which
+      # the user can fill in from Settings.
+      - name: Provide the API key, if configured
+        env:
+          GROQ_KEY: ${{ secrets.GROQ_KEY }}
+        run: if [ -n "$GROQ_KEY" ]; then printf '%s' "$GROQ_KEY" > local.key; fi
+
+      # Signing is optional. With the secrets present the APK is signed with
+      # the real release key and attached to the release, so it upgrades over
+      # an installed copy. Without them an unsigned APK is produced as a build
+      # artifact only -- never attached to a release, because an APK signed
+      # with a different key cannot be installed over the existing app and
+      # would look like a corrupt download to everyone who tried.
+      - name: Restore the signing keystore, if configured
+        id: signing
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            printf '%s' "$KEYSTORE_B64" | base64 -d > release.keystore
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No KEYSTORE_B64 secret — building an unsigned APK that cannot be published."
+          fi
+
+      - name: Build
+        env:
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: bash build.sh Chess.apk
+
+      - name: Check the version matches the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          APP=$(node -e "console.log(require('./assets/js/changelog.js').VERSION)")
+          echo "tag=$TAG app=$APP"
+          if [ "$TAG" != "$APP" ]; then
+            echo "::error::Tag $TAG does not match the app version $APP"; exit 1
+          fi
+
+      - name: Upload the build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chess-apk
+          path: Chess.apk
+
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/v') && steps.signing.outputs.signed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" Chess.apk --clobber

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android Auto Backup quietly gives this app most of what people want from a
+  login: the player's data rides along with their Google account and comes
+  back when they set up a new phone, with no accounts, no server and no
+  password for us to leak. WebView local storage lives in app_webview, and the
+  reminder schedule lives in SharedPreferences.
+
+  The Groq API key is explicitly excluded. It is a credential, and credentials
+  do not belong in a backup that syncs off the device.
+-->
+<full-backup-content>
+    <include domain="database" path="." />
+    <include domain="sharedpref" path="." />
+    <include domain="file" path="app_webview" />
+    <exclude domain="sharedpref" path="serena_secrets.xml" />
+</full-backup-content>

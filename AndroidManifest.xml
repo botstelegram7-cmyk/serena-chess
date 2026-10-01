@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.serena.chess"
-    android:versionCode="9"
-    android:versionName="1.7.1">
+    android:versionCode="10"
+    android:versionName="1.8">
 
-    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
+    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="35" />
 
     <!-- only used for the optional AI bot chat; the game itself is offline -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- daily reminder -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -19,6 +20,8 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/AppTheme"
         android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:hardwareAccelerated="true"
         android:usesCleartextTraffic="false"
         android:supportsRtl="false">
@@ -34,6 +37,10 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- long-press the launcher icon: continue, daily puzzle, play -->
+            <meta-data android:name="android.app.shortcuts"
+                       android:resource="@xml/shortcuts" />
         </activity>
 
         <receiver android:name=".NotifyReceiver" android:exported="false" />

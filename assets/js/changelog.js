@@ -5,10 +5,26 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.7.1';
-  var BUILD = 9;
+  var VERSION = '1.8';
+  var BUILD = 10;
 
   var LOG = [
+    { v: '1.8', date: '2026-10-01', title: 'Progress, backups and a smoother board',
+      items: [
+        ['fix', 'Bots no longer freeze the app while they think. The engine now hands control back between slices of its search, so the clock keeps ticking, animations keep running and taps keep landing even during a long think.'],
+        ['new', 'Your progress: a rating curve, which openings you actually score with, your puzzle strength broken down by theme, and twenty achievements.'],
+        ['new', 'The climb. All sixty characters as a ladder from 250 to 3200. Beat one to unlock the next; losing never costs you a rung.'],
+        ['new', 'Puzzles are now rated. Every attempt moves a puzzle rating, tracked per theme, and only your first miss on a puzzle counts.'],
+        ['new', 'A daily puzzle, the same one for everyone, with a streak.'],
+        ['new', 'Account and backup. Export everything to a file and restore it on another phone. Android also backs the app up to your Google account automatically.'],
+        ['new', 'Vibration feedback on moves, captures and checks. Turn it off in Settings.'],
+        ['new', 'Long-press the app icon to jump straight to the daily puzzle or your game.'],
+        ['new', 'Online matchmaking now pairs you by rating, widening the search the longer you wait, rather than taking whoever is first in the queue.'],
+        ['fix', 'Android 15 support. The board no longer risks sliding under the status bar or the navigation bar.'],
+        ['fix', 'Choosing a file now offers the right kind of file. The picker was locked to images, so a backup could never be selected.'],
+        ['note', 'Opponents using the human model now play worse under time pressure, as people do.']
+      ] },
+
     { v: '1.7.1', date: '2026-10-01', title: 'All 60 characters illustrated',
       items: [
         ['fix', 'Eight characters were still showing a plain lettered tile instead of a portrait. Wednesday, Homelander, Gojo, Ragnar, Lelouch, Tyrion, Aizen and Mycroft now have their artwork, so every one of the 60 opponents is illustrated.'],

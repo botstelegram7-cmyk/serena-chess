@@ -14,7 +14,7 @@ w.HTMLMediaElement.prototype.load = () => {};
 for (const [k,v] of [['offsetLeft',0],['offsetWidth',10],['clientWidth',100]])
   Object.defineProperty(w.HTMLElement.prototype, k, { get(){ return v } });
 
-for (const f of ['engine','themes','bots','puzzles','openings','ai','human','changelog','review','online','ui','chat','app'])
+for (const f of ['engine','themes','bots','puzzles','openings','ai','human','changelog','progress','account','charts','review','online','ui','chat','app'])
   w.eval(fs.readFileSync(P+'js/'+f+'.js','utf8'));
 w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
 
@@ -218,6 +218,63 @@ ok(`changelog.js (${clv}) matches AndroidManifest (${mName})`, clv === mName);
 ok(`changelog.js build (${w.ChessChangelog.BUILD}) matches versionCode (${mCode})`, String(w.ChessChangelog.BUILD) === mCode);
 ok(`CHANGELOG.md top entry (${mdTop}) matches the app (${clv})`, mdTop === clv);
 ok('the version is shown on the home screen', (w.document.getElementById('ver-tag').textContent || '').includes(clv));
+
+
+console.log('\n── v1.8: progress, ladder and account ──');
+
+const html18 = fs.readFileSync(P + 'index.html', 'utf8');
+ok('the progression modules are loaded by the page',
+   ['progress.js', 'account.js', 'charts.js'].every((f) => html18.indexOf(f) > 0));
+
+for (const name of ['progress', 'ladder', 'account']) {
+  ok(`the ${name} screen exists`, !!$('#screen-' + name));
+  ok(`settings links to ${name}`, !!$(`[data-go="${name}"]`));
+}
+
+click($('[data-go="progress"]'));
+const pg = $('#pg-body');
+ok('progress renders', !!pg && pg.innerHTML.length > 200);
+ok('it shows the daily puzzle', /Daily puzzle/i.test(pg.textContent));
+ok('it shows the rating curve section', /Rating/i.test(pg.textContent));
+ok('it shows puzzle strength', /puzzle rating/i.test(pg.textContent));
+ok('it shows openings', /openings/i.test(pg.textContent));
+ok('it lists the achievements', pg.querySelectorAll('.ach').length >= 15);
+ok('a new player gets empty states, not a fake chart',
+   /will appear here|shows which openings|show up here/i.test(pg.textContent));
+ok('no emoji on the progress screen',
+   !/[\u{1F300}-\u{1FAFF}\u{2700}-\u{27BF}]/u.test(pg.textContent));
+
+click($('[data-go="ladder"]'));
+const ld = $('#ld-body');
+ok('the ladder lists every character', ld.querySelectorAll('.ld-row').length === 60);
+/* Earlier sections of this suite play games, which legitimately unlocks
+   rungs, so assert the invariants rather than a fixed starting count. */
+const playable = ld.querySelectorAll('.ld-row[data-action="ladder-play"]').length;
+const locked = ld.querySelectorAll('.ld-row.locked').length;
+ok('at least the seeded rungs are playable', playable >= 3);
+ok('every rung is either playable or locked, never both', playable + locked === 60);
+ok('the open rungs are the bottom ones, contiguously',
+   [...ld.querySelectorAll('.ld-row')].findIndex((r) => r.classList.contains('locked')) === playable);
+const elos = [...ld.querySelectorAll('.ld-row .el')].map((x) => +x.textContent);
+ok('the ladder runs weakest to strongest', elos[0] < elos[elos.length - 1]);
+ok('it says losing costs nothing', /never costs you a rung/i.test(ld.textContent));
+ok('every rung shows a portrait',
+   [...ld.querySelectorAll('.ld-row img')].every((i2) => (i2.getAttribute('src') || '').indexOf('avatars/') === 0));
+
+click($('[data-go="account"]'));
+const ac = $('#ac-body');
+ok('the account screen renders', !!ac && ac.innerHTML.length > 150);
+ok('players are guests by default', /guest/i.test(ac.textContent));
+ok('it is honest that there is no server', /no server/i.test(ac.textContent));
+ok('export is offered', !!$('[data-action="backup-export"]'));
+ok('restore is offered', !!$('[data-action="backup-import"]'));
+ok('the restore input accepts json rather than images',
+   !!$('#restore-file') && $('#restore-file').accept.indexOf('json') >= 0);
+ok('google sign-in is hidden until configured', !$('[data-action="google-signin"]'));
+
+ok('a vibration toggle exists', !!$('#opt-haptics'));
+ok('no dead premove switch shipped', !$('#opt-premove'));
+ok('the avatar colour option is still gone', !$('#avatar-colors'));
 
 console.log(fails ? `\n${fails} FAILURES` : '\nALL CHECKS PASSED');
 process.exit(fails?1:0);

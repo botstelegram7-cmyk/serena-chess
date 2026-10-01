@@ -186,6 +186,31 @@
 
   /* ──────────────────────────────────────────────────── public API ─── */
 
+  /**
+   * Real players fall apart on the clock, and an opponent that plays its
+   * normal strength with four seconds left is the last obvious tell that it
+   * is not human. Below roughly thirty seconds the effective rating sags,
+   * the oversight rate climbs and the horizon shortens -- gently at first,
+   * then sharply inside the last ten seconds.
+   *
+   * Returns a multiplier set rather than mutating anything, so a game with
+   * no clock is completely unaffected.
+   */
+  function timePressure(msLeft) {
+    if (typeof msLeft !== 'number' || msLeft <= 0 || msLeft > 60000) {
+      return { slip: 1, maxloss: 1, horizon: 0, temp: 1 };
+    }
+    var sec = msLeft / 1000;
+    /* 0 at 60s rising to 1 at 0s, curved so most of the damage is late */
+    var p = Math.pow(Math.max(0, (60 - sec) / 60), 2.2);
+    return {
+      slip: 1 + p * 3.2,        /* up to ~4x more oversights        */
+      maxloss: 1 + p * 2.4,     /* tolerate much worse moves        */
+      horizon: p > 0.72 ? -2 : p > 0.42 ? -1 : 0,
+      temp: 1 + p * 1.5         /* choice gets noisier              */
+    };
+  }
+
   function pickMove(game, opts, sanHistory) {
     var legal = game.moves();
     if (!legal.length) return null;
@@ -294,7 +319,7 @@
   }
 
   var API = {
-    MIN_ELO: MIN_ELO, MAX_ELO: MAX_ELO,
+    timePressure: timePressure, MIN_ELO: MIN_ELO, MAX_ELO: MAX_ELO,
     profile: profile, pickMove: pickMove, thinkMs: thinkMs,
     identity: identity, band: band, attention: attention
   };

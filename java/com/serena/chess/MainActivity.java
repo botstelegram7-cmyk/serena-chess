@@ -18,6 +18,9 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebChromeClient;
+import android.os.Vibrator;
+import android.os.VibrationEffect;
+import android.view.WindowInsets;
 import android.webkit.WebViewClient;
 
 import org.json.JSONObject;
@@ -207,6 +210,35 @@ public class MainActivity extends Activity {
         pendingFileCallback = null;
     }
 
+    /**
+     * Short vibrations for board events. A move landing with a tick of haptic
+     * feedback is most of what makes a touch board feel physical rather than
+     * like tapping glass. Kept very short -- anything over ~40ms reads as a
+     * buzz and becomes annoying within a game.
+     */
+    public class Haptics {
+        @JavascriptInterface
+        public void tap(int ms) {
+            if (ms <= 0 || ms > 80) ms = 18;
+            try {
+                Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                if (v == null || !v.hasVibrator()) return;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    v.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE));
+                } else {
+                    v.vibrate(ms);
+                }
+            } catch (Exception ignored) { }
+        }
+        @JavascriptInterface
+        public boolean available() {
+            try {
+                Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                return v != null && v.hasVibrator();
+            } catch (Exception e) { return false; }
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -246,10 +278,26 @@ public class MainActivity extends Activity {
                 if (pendingFileCallback != null) pendingFileCallback.onReceiveValue(null);
                 pendingFileCallback = callback;
                 try {
+                    /* Honour what the page asked for. This was pinned to
+                       image/* for the avatar picker, which meant the backup
+                       restore input could only ever show photos. */
+                    String want = "*/*";
+                    try {
+                        String[] accept = params != null ? params.getAcceptTypes() : null;
+                        if (accept != null) {
+                            for (String a : accept) {
+                                if (a == null || a.length() == 0) continue;
+                                if (a.startsWith(".")) continue;        /* extension, not a MIME type */
+                                want = a;
+                                break;
+                            }
+                        }
+                    } catch (Exception ignored) { }
+
                     Intent pick = new Intent(Intent.ACTION_GET_CONTENT);
                     pick.addCategory(Intent.CATEGORY_OPENABLE);
-                    pick.setType("image/*");
-                    startActivityForResult(Intent.createChooser(pick, "Choose a picture"),
+                    pick.setType(want);
+                    startActivityForResult(Intent.createChooser(pick, "Choose a file"),
                                            REQ_PICK_IMAGE);
                     return true;
                 } catch (Exception e) {
@@ -275,9 +323,40 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new Share(), "AndroidShare");
         web.addJavascriptInterface(new Net(), "AndroidNet");
         web.addJavascriptInterface(new Notify(), "AndroidNotify");
+        web.addJavascriptInterface(new Haptics(), "AndroidHaptics");
+        /* A launcher shortcut arrives as serena-chess://open/<target>. The page
+           cannot be told until it exists, so the target is stashed and the
+           page collects it on boot via AndroidStore. */
+        try {
+            Uri launch = getIntent() != null ? getIntent().getData() : null;
+            if (launch != null && "serena-chess".equals(launch.getScheme())) {
+                String path = launch.getPath();
+                if (path != null && path.length() > 1) {
+                    prefs.edit().putString("shortcut", path.substring(1)).apply();
+                }
+            }
+        } catch (Exception ignored) { }
+
         web.loadUrl("file:///android_asset/index.html");
 
         setContentView(web);
+
+        /* From targetSdk 35 Android 15 lays apps out edge to edge, so without
+           this the board would slide under the status bar and the bottom nav
+           would sit on top of the move bar. Padding the WebView by the system
+           bar insets keeps every layout the HTML already has correct, on both
+           old and new Android, with no CSS changes. */
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            web.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+                @Override
+                public WindowInsets onApplyWindowInsets(View v, WindowInsets in) {
+                    v.setPadding(in.getSystemWindowInsetLeft(), in.getSystemWindowInsetTop(),
+                                 in.getSystemWindowInsetRight(), in.getSystemWindowInsetBottom());
+                    return in;
+                }
+            });
+            web.requestApplyInsets();
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().setStatusBarColor(Color.parseColor("#262522"));

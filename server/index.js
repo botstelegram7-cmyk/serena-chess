@@ -109,15 +109,40 @@ class Room {
 }
 
 /* ---------------------------------------------------------- matchmaking */
+/* How far apart two ratings may be and still be paired. Starts tight so an
+   800 is not fed to a 2200, then widens every few seconds because a good
+   match you never get is worse than an imperfect one you do. */
+function ratingWindow(waitedMs) {
+  return 100 + Math.floor(waitedMs / 4000) * 150;   /* 100 -> +150 per 4s */
+}
+
+/* Best available opponent inside a mutually acceptable window. Mutual
+   matters: the player who has waited longer has a wider window, and pairing
+   on only one side would let a fresh arrival be dragged into a bad game. */
+function findOpponent(q, ws, now) {
+  let best = null, bestGap = Infinity;
+  for (const peer of q) {
+    if (peer === ws || peer.readyState !== 1) continue;
+    const gap = Math.abs((peer.prating || 1200) - (ws.prating || 1200));
+    const peerWindow = ratingWindow(now - (peer.queuedAt || now));
+    const myWindow = ratingWindow(now - (ws.queuedAt || now));
+    if (gap <= Math.min(peerWindow, myWindow) && gap < bestGap) { best = peer; bestGap = gap; }
+  }
+  return best;
+}
+
 function enqueue(ws, tc) {
   dequeue(ws);
   if (!queues.has(tc)) queues.set(tc, []);
   const q = queues.get(tc);
+  ws.queuedAt = Date.now();
 
-  // someone already waiting? pair them up immediately
-  while (q.length) {
-    const peer = q.shift();
-    if (peer.readyState !== 1 || peer.room) continue;
+  // someone already waiting at a compatible rating? pair them up immediately
+  for (;;) {
+    const peer = findOpponent(q, ws, Date.now());
+    if (!peer) break;                      /* nobody in range yet — wait */
+    q.splice(q.indexOf(peer), 1);
+    if (peer.readyState !== 1 || peer.room) continue;   /* stale socket, try the next */
     const room = new Room(makeCode(), tc, true);
     rooms.set(room.code, room);
     room.add(peer, peer.pname, peer.prating);
@@ -130,6 +155,31 @@ function enqueue(ws, tc) {
   ws.queuedIn = tc;
   send(ws, { t: 'queued', tc, waiting: q.length });
 }
+
+/* Windows widen with waiting time, but nothing re-examines the queue unless
+   somebody new arrives -- so two players just outside each other's window
+   would sit there forever while their windows grew. This sweep retries the
+   pairing every few seconds. */
+setInterval(function sweepQueues() {
+  const now = Date.now();
+  for (const [tc, q] of queues) {
+    for (let i = 0; i < q.length; i++) {
+      const ws = q[i];
+      if (!ws || ws.readyState !== 1 || ws.room) continue;
+      const rest = q.filter((x) => x !== ws);
+      const peer = findOpponent(rest, ws, now);
+      if (!peer) continue;
+      q.splice(q.indexOf(peer), 1);
+      q.splice(q.indexOf(ws), 1);
+      const room = new Room(makeCode(), tc, true);
+      rooms.set(room.code, room);
+      room.add(peer, peer.pname, peer.prating);
+      room.add(ws, ws.pname, ws.prating);
+      room.start();
+      i = -1;                                /* queue changed, start over */
+    }
+  }
+}, 3000).unref?.();
 
 function dequeue(ws) {
   if (!ws.queuedIn) return;
@@ -168,7 +218,24 @@ wss.on('connection', (ws) => {
 
   send(ws, { t: 'welcome', v: 1 });
 
+  /* Abuse limits. A relay with no limits is a free amplifier: one client can
+     flood a room, or pin the process with huge payloads. Generous enough that
+     no honest client in a bullet game will ever touch them. */
+  ws.bucket = { tokens: 40, at: Date.now() };
+  ws.lastChat = 0;
+
+  function allow(cost) {
+    const now = Date.now();
+    ws.bucket.tokens = Math.min(40, ws.bucket.tokens + (now - ws.bucket.at) * 0.025);
+    ws.bucket.at = now;
+    if (ws.bucket.tokens < cost) return false;
+    ws.bucket.tokens -= cost;
+    return true;
+  }
+
   ws.on('message', (raw) => {
+    if (raw && raw.length > 4096) return;            /* no giant frames   */
+    if (!allow(1)) return;                           /* ~25 msg/s sustained */
     let m;
     try { m = JSON.parse(raw.toString()); } catch (_) { return; }
     if (!m || typeof m.t !== 'string') return;
@@ -228,6 +295,11 @@ wss.on('connection', (ws) => {
       }
 
       case 'chat': {
+      const now = Date.now();
+      if (now - ws.lastChat < 1200) break;           /* one line per 1.2s */
+      ws.lastChat = now;
+      if (typeof m.text === 'string' && m.text.length > 400) m.text = m.text.slice(0, 400);
+    } {
         if (!room) break;
         const text = String(m.text || '').slice(0, 300);
         if (text) room.broadcast({ t: 'chat', text, from: ws.pname }, ws);
