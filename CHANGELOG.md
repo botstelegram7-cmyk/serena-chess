@@ -1,5 +1,62 @@
 # Changelog
 
+## 1.9 — 2026-10-02
+
+### Engine strength
+
+The strongest opponents were not playing anywhere near their stated level, and
+the cause was in the search rather than the evaluation. Three defects, all now
+fixed and each measured rather than assumed.
+
+- **The root searched every move with a full window**, which threw away
+  alpha-beta pruning at the top of the tree entirely -- the single most
+  expensive place to lose it. The weakening model genuinely needs a score for
+  every root move, which is why it was written that way, but it only ever
+  looks at moves within its tolerance window. The root now searches at the
+  fidelity each opponent actually requires: exact scores inside the window,
+  cheap bounds below it, and full principal variation search with an
+  aspiration window for opponents that always play the best move.
+- **Quiescence ignored check.** A position in check was evaluated as if the
+  side to move could simply stand still, so threats against the king were
+  invisible at the horizon. It now searches evasions and reports mate.
+- **Losing captures were searched in full.** Static exchange evaluation now
+  prunes them, cutting the tree without changing the result.
+
+Also added: mate-distance pruning, an adaptive null-move reduction, and
+depth-and-position dependent late move reductions.
+
+Measured effects, same hardware and same time budget:
+
+| Measurement | 1.8 | 1.9 |
+|---|---|---|
+| Self-play, 120 unique games, best-move search | — | **+228 Elo** (95% CI 159 to 316) |
+| Search depth reached, top opponent at 5000 ms | 6–7 ply | **8–10 ply** |
+| The Professor at 3800 ms | 6–7 ply | **8–10 ply** |
+| Nodes to reach a given depth | — | 18% to 63% fewer |
+
+Because the depth each opponent reached was being limited by its depth cap
+rather than its clock, the caps have been raised across the ladder so the
+extra speed becomes extra strength instead of idle time.
+
+### Honesty about the numbers
+
+The Elo figures above are self-play differences against version 1.8, not FIDE
+ratings. As always, a displayed rating above roughly 2400 is an in-app tier:
+the engine plays somewhere around 2200 to 2400 strength at these depths, and
+the ladder above that is a difficulty scale, not a rating claim.
+
+The per-tier move-quality comparison in `tools/ladder_acpl.js` was too noisy at
+the sample size used to resolve differences for individual opponents, so no
+per-tier strength claim is made here beyond the ladder-wide results above.
+
+### Unchanged by design
+
+The weaker opponents are meant to be beatable, so their characteristic
+mistakes are preserved deliberately. `tools/root_equiv_test.js` verifies that
+the faster root never changes which moves an opponent is willing to play,
+across the whole roster. The sliced asynchronous search still never blocks the
+interface; the longest uninterrupted block is slightly shorter than in 1.8.
+
 ## 1.8 — 2026-10-01
 
 ### Engine and performance

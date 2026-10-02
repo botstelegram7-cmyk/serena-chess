@@ -239,122 +239,6 @@
     return g.turn === WHITE ? score : -score;
   }
 
-  /* ---------------------------------------------- static exchange eval */
-
-  /* 0x88 direction tables, mirrored from the engine so SEE can walk rays
-     without generating moves. */
-  var SEE_KN = [-33, -31, -18, -14, 14, 18, 31, 33];
-  var SEE_BI = [-17, -15, 15, 17];
-  var SEE_RK = [-16, -1, 1, 16];
-  var SEE_KG = [-17, -16, -15, -1, 1, 15, 16, 17];
-
-  var seeGone = new Uint8Array(128);
-  var seeTouched = [];
-
-  /* Cheapest piece of `side` that attacks `sq`, skipping squares already
-     consumed by the exchange. Rays continue through consumed squares, which
-     is what gives x-ray attackers (a rook behind a rook) for free. */
-  function smallestAttacker(b, sq, side) {
-    var i, s, p, t, best = -1, bestVal = 1e9, d;
-
-    var pd = side === WHITE ? 16 : -16;      /* attacker sits "behind" */
-    for (i = -1; i <= 1; i += 2) {
-      s = sq + pd + i;
-      if (s < 0 || offBoard(s) || seeGone[s]) continue;
-      p = b[s];
-      if (p && colorOf(p) === side && typeOf(p) === PAWN && VALUE[PAWN] < bestVal) {
-        bestVal = VALUE[PAWN]; best = s;
-      }
-    }
-    for (i = 0; i < 8; i++) {
-      s = sq + SEE_KN[i];
-      if (s < 0 || offBoard(s) || seeGone[s]) continue;
-      p = b[s];
-      if (p && colorOf(p) === side && typeOf(p) === KNIGHT && VALUE[KNIGHT] < bestVal) {
-        bestVal = VALUE[KNIGHT]; best = s;
-      }
-    }
-    for (i = 0; i < 4; i++) {
-      d = SEE_BI[i];
-      for (s = sq + d; s >= 0 && !offBoard(s); s += d) {
-        if (seeGone[s]) continue;            /* x-ray straight through */
-        p = b[s];
-        if (!p) continue;
-        if (colorOf(p) === side) {
-          t = typeOf(p);
-          if ((t === BISHOP || t === QUEEN) && VALUE[t] < bestVal) { bestVal = VALUE[t]; best = s; }
-        }
-        break;
-      }
-    }
-    for (i = 0; i < 4; i++) {
-      d = SEE_RK[i];
-      for (s = sq + d; s >= 0 && !offBoard(s); s += d) {
-        if (seeGone[s]) continue;
-        p = b[s];
-        if (!p) continue;
-        if (colorOf(p) === side) {
-          t = typeOf(p);
-          if ((t === ROOK || t === QUEEN) && VALUE[t] < bestVal) { bestVal = VALUE[t]; best = s; }
-        }
-        break;
-      }
-    }
-    for (i = 0; i < 8; i++) {
-      s = sq + SEE_KG[i];
-      if (s < 0 || offBoard(s) || seeGone[s]) continue;
-      p = b[s];
-      if (p && colorOf(p) === side && typeOf(p) === KING && VALUE[KING] < bestVal) {
-        bestVal = VALUE[KING]; best = s;
-      }
-    }
-    return best;
-  }
-
-  /**
-   * What a capture is actually worth once both sides trade everything on the
-   * square. Negative means the capture loses material. Without this the
-   * quiescence search happily explored QxP-defended-by-a-pawn, which both
-   * wasted an enormous number of nodes and polluted the scores it returned.
-   */
-  function see(g, move) {
-    var b = g.board;
-    var target = move.to;
-    var attacker = b[move.from];
-    if (!attacker) return 0;
-
-    seeTouched.length = 0;
-
-    var captured = move.captured ? VALUE[typeOf(move.captured)] : 0;
-    if (move.flags & E.FLAG_EP) captured = VALUE[PAWN];
-
-    var gain = [captured];
-    var onSquare = VALUE[typeOf(attacker)];
-    var side = colorOf(attacker) ^ 1;
-    seeGone[move.from] = 1; seeTouched.push(move.from);
-
-    var d = 0;
-    for (;;) {
-      var from = smallestAttacker(b, target, side);
-      if (from < 0) break;
-      d++;
-      gain[d] = onSquare - gain[d - 1];
-      onSquare = VALUE[typeOf(b[from])];
-      seeGone[from] = 1; seeTouched.push(from);
-      side ^= 1;
-      /* once continuing the exchange cannot help either side, stop */
-      if (Math.max(-gain[d - 1], gain[d]) < 0) break;
-    }
-    /* Fold the exchange back: each side takes the trade only if it beats
-       standing still. This must run for d === 1 as well -- writing it as
-       `while (--d > 0)` skipped the single-recapture case, which is by far
-       the most common one, and made every defended capture look free. */
-    while (d > 0) { gain[d - 1] = -Math.max(-gain[d - 1], gain[d]); d--; }
-
-    for (var i = 0; i < seeTouched.length; i++) seeGone[seeTouched[i]] = 0;
-    return gain[0];
-  }
-
   /* ------------------------------------------------------- search object */
   function Search(game, opts) {
     this.g = game;
@@ -404,40 +288,21 @@
     this.nodes++;
     if (this.timeUp()) return alpha;
 
+    var stand = evaluate(this.g, this.opts);
+    if (stand >= beta) return beta;
+    if (stand > alpha) alpha = stand;
+    if (ply > 24) return stand;
+
     var g = this.g;
-    if (ply > 32) return evaluate(g, this.opts);
+    var moves = this.order(g.generateMoves({ captures: true }), ply, null);
 
-    var inCheck = g.isAttacked(g.kings[g.turn], g.turn ^ 1);
-    var stand = 0, moves;
-
-    if (inCheck) {
-      /* You are not allowed to decline to answer a check, so there is no
-         standing pat here. The old code evaluated the position statically and
-         looked only at captures, which meant a side being mated or about to
-         lose a piece to a check could be scored as perfectly healthy. That is
-         the single biggest reason the bots blundered and defended badly. */
-      moves = this.order(g.generateMoves(), ply, null);
-    } else {
-      stand = evaluate(g, this.opts);
-      if (stand >= beta) return beta;
-      if (stand > alpha) alpha = stand;
-      moves = this.order(g.generateMoves({ captures: true }), ply, null);
-    }
-
-    var legal = 0;
     for (var i = 0; i < moves.length; i++) {
       var m = moves[i];
-
-      if (!inCheck) {
-        /* delta pruning: even winning this piece would not reach alpha */
-        if (m.captured && stand + VALUE[typeOf(m.captured)] + 200 < alpha) continue;
-        /* and never burn nodes on a capture that simply loses material */
-        if (!(m.flags & E.FLAG_PROMO) && see(g, m) < 0) continue;
-      }
+      // delta pruning
+      if (m.captured && stand + VALUE[typeOf(m.captured)] + 200 < alpha) continue;
 
       g.makeMove(m);
       if (g.isAttacked(g.kings[g.turn ^ 1], g.turn)) { g.undoMove(); continue; }
-      legal++;
       var score = -this.quiesce(-beta, -alpha, ply + 1);
       g.undoMove();
 
@@ -445,9 +310,6 @@
       if (score >= beta) return beta;
       if (score > alpha) alpha = score;
     }
-
-    /* no way out of check at all is mate, and it must be reported as mate */
-    if (inCheck && legal === 0) return -MATE + ply;
     return alpha;
   };
 
@@ -466,15 +328,6 @@
         if (g.history[h].hash === g.hash) { rep++; break; }
       }
       if (rep) return 0;
-    }
-
-    /* mate distance pruning: a mate already found closer to the root can
-       never be beaten by one found deeper, so stop looking. */
-    if (ply > 0) {
-      var mdA = alpha > -MATE + ply ? alpha : -MATE + ply;
-      var mdB = beta < MATE - ply - 1 ? beta : MATE - ply - 1;
-      if (mdA >= mdB) return mdA;
-      alpha = mdA; beta = mdB;
     }
 
     var key = g.hash;
@@ -499,8 +352,7 @@
     if (allowNull && !inCheck && depth >= 3 && ply > 0 && this.hasNonPawn(g.turn)) {
       var savedEp = g.epSquare, savedHash = g.hash;
       g.turn ^= 1; g.epSquare = -1; g.hash = g.computeHash();
-      var R = depth > 6 ? 4 : 3;      /* reduce harder when there is depth to spare */
-      var nullScore = -this.negamax(depth - R, -beta, -beta + 1, ply + 1, false);
+      var nullScore = -this.negamax(depth - 3, -beta, -beta + 1, ply + 1, false);
       g.turn ^= 1; g.epSquare = savedEp; g.hash = savedHash;
       if (this.aborted) return alpha;
       if (nullScore >= beta) return beta;
@@ -520,17 +372,7 @@
         score = -this.negamax(depth - 1, -beta, -alpha, ply + 1, true);
       } else {
         // late move reduction for quiet moves
-        /* Reduce quiet moves further the later they appear and the deeper
-           the search: the move ordering is good enough that move 15 at depth
-           8 is very unlikely to be best, and the re-search catches mistakes. */
-        var red = 0;
-        if (depth >= 3 && legal > 3 && !(m.flags & E.FLAG_CAPTURE) && !(m.flags & E.FLAG_PROMO) && !inCheck) {
-          red = 1;
-          if (legal > 6 && depth >= 5) red = 2;
-          if (legal > 12 && depth >= 7) red = 3;
-          if (red >= depth - 1) red = depth - 2;
-          if (red < 0) red = 0;
-        }
+        var red = (depth >= 3 && legal > 4 && !(m.flags & E.FLAG_CAPTURE) && !inCheck) ? 1 : 0;
         score = -this.negamax(depth - 1 - red, -alpha - 1, -alpha, ply + 1, true);
         if (score > alpha && score < beta) {
           score = -this.negamax(depth - 1, -beta, -alpha, ply + 1, true);
@@ -555,11 +397,7 @@
     if (legal === 0) return inCheck ? -MATE + ply : 0;      // mate or stalemate
 
     var flag = best <= alphaOrig ? 2 : (best >= beta ? 1 : 0);
-    /* The table used to simply stop storing once full, so every deep search
-       ran the back half of its time with no table at all. Clearing is crude
-       but keeps the most recent, most relevant entries flowing. */
-    if (this.tt.size >= 400000) this.tt.clear();
-    this.tt.set(key, { depth: depth, score: best, flag: flag, move: bestMove });
+    if (this.tt.size < 300000) this.tt.set(key, { depth: depth, score: best, flag: flag, move: bestMove });
     return best;
   };
 
@@ -576,65 +414,7 @@
   };
 
   /** Score every root move; returns [{move, score, san}] best-first. */
-  /**
-   * Search the root move list.
-   *
-   * `needAllScores` exists because the weakening model picks from the scored
-   * list within a tolerance window, so the weaker bots genuinely need a real
-   * score for every root move. That forces a full window on every move and
-   * throws away alpha-beta at the root entirely, which is enormously
-   * expensive -- it was costing the strongest bots about two ply.
-   *
-   * Bots that always play the best move (spread 0, blunder 0) do not need
-   * those scores, so they get proper principal variation search at the root
-   * plus an aspiration window, and search far deeper in the same time.
-   */
-  /**
-   * Normalise the root score-fidelity argument.
-   *
-   *   true  / undefined -> Infinity, an exact score for every root move
-   *   false             -> 0, best move only (full principal variation search)
-   *   a number          -> exact scores only for moves within that many
-   *                        centipawns of the best; anything worse may come
-   *                        back as an upper bound.
-   *
-   * The weakening model only ever inspects moves inside its tolerance window,
-   * and its blunder path samples the tail uniformly, so bounds below the
-   * window cannot change which move is chosen.
-   */
-  function rootTolerance(v) {
-    if (v === undefined || v === true) return Infinity;
-    if (v === false) return 0;
-    var n = +v;
-    return isFinite(n) && n > 0 ? n : 0;
-  }
-
-  /** Search one already-made root move at the required fidelity. */
-  Search.prototype.rootProbe = function (d, isFirst, alpha, beta, tol) {
-    if (tol === Infinity) return -this.negamax(d - 1, -INF, INF, 1, true);
-    if (isFirst) return -this.negamax(d - 1, -beta, -alpha, 1, true);
-    var lo = alpha - tol;
-    if (!(lo > -INF)) lo = -INF;
-    var sc = -this.negamax(d - 1, -lo - 1, -lo, 1, true);
-    if (sc > lo) sc = -this.negamax(d - 1, -beta, -lo, 1, true);
-    return sc;
-  };
-
-  /** How far below the best move this bot could still pick from. */
-  function botTolerance(bot, style) {
-    if (!bot) return 0;
-    style = style || bot.style || DEFAULT_STYLE;
-    var tol = bot.spread || 0;
-    tol += 170 * (style.aggression || 0) + 20 * (style.trade || 0);
-    if (bot.blunder) tol += 150;
-    /* headroom for the small score drift the narrow root windows introduce */
-    tol += 300;
-    return tol;
-  }
-
-  Search.prototype.rootScores = function (maxDepth, budgetMs, needAllScores) {
-    var tol = rootTolerance(needAllScores);
-    needAllScores = tol === Infinity;
+  Search.prototype.rootScores = function (maxDepth, budgetMs) {
     var g = this.g;
     this.stopAt = Date.now() + budgetMs;
     this.aborted = false;
@@ -644,64 +424,28 @@
 
     var scored = roots.map(function (m) { return { move: m, score: -INF }; });
     var completed = null;
-    var prevBest = 0;
 
     for (var d = 1; d <= maxDepth; d++) {
-      var pass = [];
-      var alpha, beta, window = 40;
-
-      for (;;) {                       /* aspiration, widening on failure */
-        /* Aspiration only in pure best-move mode; with a tolerance window the
-           scores below best must stay comparable, so keep the window open. */
-        if (tol === 0 && d >= 4) {
-          alpha = prevBest - window; beta = prevBest + window;
-        } else {
-          alpha = -INF; beta = INF;
-        }
-        pass = [];
-        var failed = false;
-
-        for (var i = 0; i < scored.length; i++) {
-          var m = scored[i].move;
-          g.makeMove(m);
-          var sc = this.rootProbe(d, i === 0, alpha, beta, tol);
-          g.undoMove();
-          if (this.aborted) break;
-          pass.push({ move: m, score: sc });
-          if (tol !== Infinity && sc > alpha) alpha = sc;
-        }
-
+      var pass = [], alpha = -INF;
+      for (var i = 0; i < scored.length; i++) {
+        var m = scored[i].move;
+        g.makeMove(m);
+        var s = -this.negamax(d - 1, -INF, INF, 1, true);
+        g.undoMove();
         if (this.aborted) break;
-        if (tol !== 0 || d < 4) break;
-
-        var bestNow = pass.length ? Math.max.apply(null, pass.map(function (x) { return x.score; })) : 0;
-        if (bestNow <= alphaFloor(prevBest, window) || bestNow >= prevBest + window) {
-          /* the true score lay outside the window: widen and redo this depth */
-          window *= 4;
-          if (window > 2000) { window = INF; }
-          failed = true;
-        }
-        if (!failed) break;
-        if (window === INF) {
-          alpha = -INF; beta = INF;
-        }
-        if (Date.now() > this.stopAt) break;
+        pass.push({ move: m, score: s });
       }
-
       if (this.aborted) break;
-      if (!pass.length) break;
       pass.sort(function (a, b) { return b.score - a.score; });
       scored = pass;
       completed = pass;
-      prevBest = pass[0].score;
       this.depthReached = d;
-      if (pass[0].score > MATE - 100) break;        /* forced mate found */
+      // stop early on forced mate
+      if (pass[0].score > MATE - 100) break;
       if (Date.now() > this.stopAt) break;
     }
     return completed || scored;
   };
-
-  function alphaFloor(prev, window) { return prev - window; }
 
   /* ------------------------------------------------------ public wrapper */
 
@@ -758,9 +502,7 @@
 
     var style = bot.style || DEFAULT_STYLE;
     var s = new Search(game, { contempt: bot.contempt || 0, style: style });
-    /* A bot that never deviates from the best move does not need a score
-       for every root move, so it can use real alpha-beta at the root. */
-    var scored = s.rootScores(bot.depth || 3, bot.timeMs || 800, botTolerance(bot, style));
+    var scored = s.rootScores(bot.depth || 3, bot.timeMs || 800);
     if (!scored.length) return legal[Math.floor(Math.random() * legal.length)];
 
     return selectFromScored(game, bot, scored, style);
@@ -831,9 +573,7 @@
 
   function yieldThen(fn) { setTimeout(fn, 0); }
 
-  Search.prototype.rootScoresAsync = function (maxDepth, budgetMs, done, needAllScores) {
-    var tol = rootTolerance(needAllScores);
-    needAllScores = tol === Infinity;
+  Search.prototype.rootScoresAsync = function (maxDepth, budgetMs, done) {
     var self = this, g = this.g;
     this.stopAt = Date.now() + budgetMs;
     this.aborted = false;
@@ -843,18 +583,6 @@
 
     var scored = roots.map(function (m) { return { move: m, score: -INF }; });
     var completed = null, d = 1, i = 0, pass = [];
-    /* Mirrors the synchronous rootScores: principal variation search plus an
-       aspiration window whenever the caller does not need an exact score for
-       every root move. This is the path the app actually runs, so it has to
-       carry the same strength as the sync version, just spread across slices. */
-    var prevBest = 0, window = 40, alpha = -INF, beta = INF;
-
-    function openWindow() {
-      if (tol === 0 && d >= 4 && window !== INF) {
-        alpha = prevBest - window; beta = prevBest + window;
-      } else { alpha = -INF; beta = INF; }
-    }
-    openWindow();
 
     function finish() { done(completed || scored); }
 
@@ -863,33 +591,19 @@
       var sliceEnd = Date.now() + SLICE_MS;
       for (;;) {
         if (i >= scored.length) {
-          if (tol === 0 && d >= 4 && window !== INF && pass.length) {
-            var bestNow = -INF;
-            for (var k = 0; k < pass.length; k++) {
-              if (pass[k].score > bestNow) bestNow = pass[k].score;
-            }
-            if (bestNow <= prevBest - window || bestNow >= prevBest + window) {
-              window = window > 500 ? INF : window * 4;   /* widen and redo */
-              i = 0; pass = []; openWindow();
-              if (Date.now() > self.stopAt) return void finish();
-              continue;
-            }
-          }
           pass.sort(function (a, b) { return b.score - a.score; });
           scored = pass; completed = pass; self.depthReached = d;
           var forced = pass.length && pass[0].score > MATE - 100;
-          if (pass.length) prevBest = pass[0].score;
-          d++; i = 0; pass = []; window = 40; openWindow();
+          d++; i = 0; pass = [];
           if (forced || d > maxDepth || Date.now() > self.stopAt) return void finish();
           continue;
         }
         var m = scored[i].move;
         g.makeMove(m);
-        var sc = self.rootProbe(d, i === 0, alpha, beta, tol);
+        var sc = -self.negamax(d - 1, -INF, INF, 1, true);
         g.undoMove();
         if (self.aborted) return void finish();
         pass.push({ move: m, score: sc });
-        if (!needAllScores && sc > alpha) alpha = sc;
         i++;
         if (Date.now() >= sliceEnd) break;
       }
@@ -930,8 +644,6 @@
     var s = new Search(game, { contempt: (bot && bot.contempt) || 0, style: style });
     handle.cancel = function () { handle.cancelled = true; s.cancelled = true; s.aborted = true; };
 
-    /* Bots that always play the best move do not need a score for every root
-       move, which lets the root use real alpha-beta and reach ~2 ply deeper. */
     s.rootScoresAsync((bot && bot.depth) || 3, (bot && bot.timeMs) || 800, function (scored) {
       if (handle.cancelled) return;
       if (!scored.length) {
@@ -939,7 +651,7 @@
         return cb(legal.length ? legal[Math.floor(Math.random() * legal.length)] : null);
       }
       cb(selectFromScored(game, bot || {}, scored, style));
-    }, botTolerance(bot, style));
+    });
     return handle;
   }
 
@@ -949,7 +661,7 @@
     var handle = { cancel: function () { s.cancelled = true; s.aborted = true; } };
     s.rootScoresAsync(depth || 4, ms || 1200, function (scored) {
       cb(scored.length ? scored[0].move : null, scored);
-    }, false);
+    });
     return handle;
   }
 
@@ -962,11 +674,11 @@
   /** A short honest search, used for hints. */
   function bestMove(game, depth, ms) {
     var s = new Search(game, {});
-    var scored = s.rootScores(depth || 4, ms || 1200, false);
+    var scored = s.rootScores(depth || 4, ms || 1200);
     return scored.length ? scored[0].move : null;
   }
 
-  var API = { pickMove: pickMove, bestMove: bestMove, evaluate: evaluate, see: see, botTolerance: botTolerance,
+  var API = { pickMove: pickMove, bestMove: bestMove, evaluate: evaluate,
               pickMoveAsync: pickMoveAsync, bestMoveAsync: bestMoveAsync,
               selectFromScored: selectFromScored,
               quickEval: quickEval, Search: Search, VALUE: VALUE, MATE: MATE,

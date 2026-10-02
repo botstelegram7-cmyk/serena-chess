@@ -5,10 +5,18 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.8';
-  var BUILD = 10;
+  var VERSION = '1.9';
+  var BUILD = 11;
 
   var LOG = [
+    { v: '1.9', date: '2026-10-02', items: [
+      'Stronger opponents. The search wasted its work at the root, ignored check in quiescence, and searched losing captures in full. All three are fixed.',
+      'The top opponents now see three to four moves deeper in the same thinking time, and win a 120-game match against the previous version by a wide margin.',
+      'Depth limits raised across the ladder so the extra speed becomes extra strength.',
+      'Easier opponents keep their characteristic mistakes on purpose, verified move for move.',
+      'A rating above 2400 remains an in-app difficulty tier, not a FIDE rating.'
+    ] },
+
     { v: '1.8', date: '2026-10-01', title: 'Progress, backups and a smoother board',
       items: [
         ['fix', 'Bots no longer freeze the app while they think. The engine now hands control back between slices of its search, so the clock keeps ticking, animations keep running and taps keep landing even during a long think.'],

@@ -186,7 +186,7 @@
       tactic: 'Forward pressure, no retreating',
       book: ['attack'],
       style: { material:0.95, kingAttack:1.45, centre:1.15, pawns:0.95, passers:1.05, rooks:1.10, bishops:1.00, safety:0.70, aggression:0.90, trade:0.35 },
-      depth: 5, timeMs: 830, blunder: 0.17, spread: 185, contempt: 0 },
+      depth: 3, timeMs: 830, blunder: 0.17, spread: 185, contempt: 0 },
 
     { id: 'eren', name: 'Eren', elo: 1250, avatar: 'avatars/eren.jpg',
       title: 'The Devoted', country: 'JP', series: 'Attack on Titan',
@@ -194,7 +194,7 @@
       tactic: 'Commits to one plan and never lets go',
       book: ['attack', 'gambit'],
       style: { material:0.90, kingAttack:1.50, centre:1.05, pawns:0.95, passers:1.10, rooks:1.05, bishops:1.00, safety:0.60, aggression:1.00, trade:0.25 },
-      depth: 5, timeMs: 890, blunder: 0.16, spread: 175, contempt: 0 },
+      depth: 3, timeMs: 890, blunder: 0.16, spread: 175, contempt: 0 },
 
     { id: 'nairobi', name: 'Nairobi', elo: 1300, avatar: 'avatars/nairobi.jpg',
       title: 'The Forger', country: 'ES', series: 'Money Heist',
@@ -202,7 +202,7 @@
       tactic: 'Grabs the initiative and never gives it back',
       book: ['gambit', 'attack'],
       style: { material:1.00, kingAttack:1.35, centre:1.20, pawns:1.00, passers:1.00, rooks:1.00, bishops:1.00, safety:1.00, aggression:0.90, trade:-0.20 },
-      depth: 5, timeMs: 700, blunder: 0.12, spread: 110, contempt: -4 },
+      depth: 3, timeMs: 700, blunder: 0.12, spread: 110, contempt: -4 },
 
     { id: 'tanjiro', name: 'Tanjiro', elo: 1350, avatar: 'avatars/tanjiro.jpg',
       title: 'The Steady Blade', country: 'JP', series: 'Demon Slayer',
@@ -210,7 +210,7 @@
       tactic: 'Calm defence, precise counters',
       book: ['solid', 'positional'],
       style: { material:1.03, kingAttack:1.05, centre:1.10, pawns:1.10, passers:1.10, rooks:1.05, bishops:1.05, safety:1.15, aggression:0.45, trade:0.45 },
-      depth: 5, timeMs: 1010, blunder: 0.13, spread: 150, contempt: -4 },
+      depth: 4, timeMs: 1010, blunder: 0.13, spread: 150, contempt: -4 },
 
     { id: 'arya', name: 'Arya', elo: 1400, avatar: 'avatars/arya.jpg',
       title: 'No One', country: 'GB', series: 'Game of Thrones',
@@ -218,7 +218,7 @@
       tactic: 'Quiet moves, sudden knife',
       book: ['tricky', 'hyper'],
       style: { material:0.96, kingAttack:1.40, centre:1.00, pawns:1.00, passers:1.10, rooks:1.05, bishops:1.05, safety:0.80, aggression:0.85, trade:0.30 },
-      depth: 5, timeMs: 1110, blunder: 0.12, spread: 140, contempt: 0 },
+      depth: 4, timeMs: 1110, blunder: 0.12, spread: 140, contempt: 0 },
 
     { id: 'geralt', name: 'Geralt', elo: 1450, avatar: 'avatars/geralt.jpg',
       title: 'The Witcher', country: 'PL', series: 'The Witcher',
@@ -226,7 +226,7 @@
       tactic: 'Absorbs the attack, then counters hard',
       book: ['solid', 'positional'],
       style: { material:1.05, kingAttack:1.00, centre:1.00, pawns:1.00, passers:1.20, rooks:1.00, bishops:1.00, safety:1.30, aggression:0.15, trade:0.40 },
-      depth: 5, timeMs: 850, blunder: 0.095, spread: 90, contempt: 6 },
+      depth: 3, timeMs: 850, blunder: 0.095, spread: 90, contempt: 6 },
 
     { id: 'marty', name: 'Marty', elo: 1500, avatar: 'avatars/marty.jpg',
       title: 'The Launderer', country: 'US', series: 'Ozark',
@@ -234,7 +234,7 @@
       tactic: 'Converts small edges, takes no risks',
       book: ['positional', 'solid'],
       style: { material:1.08, kingAttack:0.90, centre:1.10, pawns:1.15, passers:1.20, rooks:1.10, bishops:1.05, safety:1.10, aggression:0.25, trade:0.65 },
-      depth: 5, timeMs: 1260, blunder: 0.1, spread: 120, contempt: -2 },
+      depth: 4, timeMs: 1260, blunder: 0.1, spread: 120, contempt: -2 },
 
     { id: 'jimmy', name: 'Jimmy', elo: 1550, avatar: 'avatars/jimmy.jpg',
       title: 'The Closer', country: 'US', series: 'Better Call Saul',
@@ -242,7 +242,7 @@
       tactic: 'Sets traps and talks you into them',
       book: ['tricky', 'gambit'],
       style: { material:0.98, kingAttack:1.25, centre:1.05, pawns:1.00, passers:1.10, rooks:1.10, bishops:1.05, safety:0.85, aggression:0.75, trade:0.35 },
-      depth: 5, timeMs: 1360, blunder: 0.09, spread: 110, contempt: 0 },
+      depth: 4, timeMs: 1360, blunder: 0.09, spread: 110, contempt: 0 },
 
     { id: 'ortega', name: 'Ortega', elo: 1600, avatar: 'avatars/ortega.jpg',
       title: 'The Detective', country: 'US', series: 'Altered Carbon',
@@ -250,7 +250,7 @@
       tactic: 'Stacks relentless pressure down open files',
       book: ['attack'],
       style: { material:1.00, kingAttack:1.40, centre:1.00, pawns:1.00, passers:1.00, rooks:1.40, bishops:1.00, safety:1.00, aggression:0.70, trade:0.00 },
-      depth: 7, timeMs: 1000, blunder: 0.075, spread: 72, contempt: 4 },
+      depth: 4, timeMs: 1000, blunder: 0.075, spread: 72, contempt: 4 },
 
     { id: 'daenerys', name: 'Daenerys', elo: 1650, avatar: 'avatars/daenerys.jpg',
       title: 'The Unburnt', country: 'GB', series: 'Game of Thrones',
@@ -258,7 +258,7 @@
       tactic: 'Builds quietly, then burns it all down',
       book: ['positional', 'attack'],
       style: { material:0.97, kingAttack:1.45, centre:1.15, pawns:1.05, passers:1.15, rooks:1.10, bishops:1.05, safety:0.90, aggression:0.80, trade:0.30 },
-      depth: 7, timeMs: 1620, blunder: 0.07, spread: 90, contempt: 4 },
+      depth: 5, timeMs: 1620, blunder: 0.07, spread: 90, contempt: 4 },
 
     { id: 'tokyo', name: 'Tokyo', elo: 1700, avatar: 'avatars/tokyo.jpg',
       title: 'The Narrator', country: 'ES', series: 'Money Heist',
@@ -266,7 +266,7 @@
       tactic: 'All-out assault on your king, cost ignored',
       book: ['gambit', 'attack'],
       style: { material:0.92, kingAttack:1.80, centre:1.00, pawns:1.00, passers:1.00, rooks:1.00, bishops:1.00, safety:0.50, aggression:1.30, trade:-0.40 },
-      depth: 7, timeMs: 1150, blunder: 0.06, spread: 58, contempt: -12 },
+      depth: 4, timeMs: 1150, blunder: 0.06, spread: 58, contempt: -12 },
 
     { id: 'sangwoo', name: 'Sang-woo', elo: 1750, avatar: 'avatars/sangwoo.jpg',
       title: 'The Graduate', country: 'KR', series: 'Squid Game',
@@ -274,7 +274,7 @@
       tactic: 'Cold calculation, zero sentiment',
       book: ['positional', 'tricky'],
       style: { material:1.02, kingAttack:1.20, centre:1.15, pawns:1.10, passers:1.20, rooks:1.15, bishops:1.05, safety:1.00, aggression:0.55, trade:0.50 },
-      depth: 7, timeMs: 1870, blunder: 0.06, spread: 78, contempt: 6 },
+      depth: 5, timeMs: 1870, blunder: 0.06, spread: 78, contempt: 6 },
 
     { id: 'villanelle', name: 'Villanelle', elo: 1800, avatar: 'avatars/villanelle.jpg',
       title: 'The Assassin', country: 'RU', series: 'Killing Eve',
@@ -282,7 +282,7 @@
       tactic: 'Elegant, sudden and completely lethal',
       book: ['tricky', 'attack'],
       style: { material:1.00, kingAttack:1.50, centre:1.00, pawns:1.00, passers:1.00, rooks:1.00, bishops:1.30, safety:0.70, aggression:1.00, trade:-0.20 },
-      depth: 7, timeMs: 1300, blunder: 0.05, spread: 46, contempt: -6 },
+      depth: 4, timeMs: 1300, blunder: 0.05, spread: 46, contempt: -6 },
 
     { id: 'wednesday', name: 'Wednesday', elo: 1850, avatar: 'avatars/wednesday.jpg',
       title: 'The Outcast', country: 'US', series: 'Wednesday',
@@ -290,7 +290,7 @@
       tactic: 'Surgical, joyless, extremely effective',
       book: ['positional', 'solid'],
       style: { material:1.05, kingAttack:1.20, centre:1.20, pawns:1.15, passers:1.20, rooks:1.15, bishops:1.10, safety:1.05, aggression:0.50, trade:0.45 },
-      depth: 7, timeMs: 2120, blunder: 0.05, spread: 66, contempt: 8 },
+      depth: 5, timeMs: 2120, blunder: 0.05, spread: 66, contempt: 8 },
 
     { id: 'harvey', name: 'Harvey', elo: 1900, avatar: 'avatars/harvey.jpg',
       title: 'The Closer', country: 'US', series: 'Suits',
@@ -298,7 +298,7 @@
       tactic: 'Wins a small edge, then grinds you flat',
       book: ['positional'],
       style: { material:1.08, kingAttack:1.00, centre:1.00, pawns:1.30, passers:1.00, rooks:1.40, bishops:1.00, safety:1.00, aggression:0.10, trade:0.60 },
-      depth: 7, timeMs: 1500, blunder: 0.04, spread: 38, contempt: 10 },
+      depth: 4, timeMs: 1500, blunder: 0.04, spread: 38, contempt: 10 },
 
     { id: 'homelander', name: 'Homelander', elo: 1950, avatar: 'avatars/homelander.jpg',
       title: 'The Icon', country: 'US', series: 'The Boys',
@@ -306,7 +306,7 @@
       tactic: 'Crushing pressure, fragile when checked',
       book: ['attack', 'gambit'],
       style: { material:0.96, kingAttack:1.60, centre:1.20, pawns:1.00, passers:1.15, rooks:1.20, bishops:1.05, safety:0.75, aggression:0.95, trade:0.25 },
-      depth: 7, timeMs: 2420, blunder: 0.04, spread: 55, contempt: 10 },
+      depth: 6, timeMs: 2420, blunder: 0.04, spread: 55, contempt: 10 },
 
     { id: 'berlin', name: 'Berlin', elo: 2000, avatar: 'avatars/berlin.jpg',
       title: 'The Aristocrat', country: 'ES', series: 'Money Heist',
@@ -314,7 +314,7 @@
       tactic: 'Cold central control, surgical execution',
       book: ['positional', 'solid'],
       style: { material:1.00, kingAttack:1.00, centre:1.25, pawns:1.20, passers:1.00, rooks:1.00, bishops:1.25, safety:1.20, aggression:0.00, trade:0.30 },
-      depth: 8, timeMs: 1700, blunder: 0.03, spread: 30, contempt: 8 },
+      depth: 5, timeMs: 1700, blunder: 0.03, spread: 30, contempt: 8 },
 
     { id: 'gojo', name: 'Gojo', elo: 2050, avatar: 'avatars/gojo.jpg',
       title: 'The Strongest', country: 'JP', series: 'Jujutsu Kaisen',
@@ -322,7 +322,7 @@
       tactic: 'Casual brilliance, infinite confidence',
       book: ['hyper', 'attack', 'tricky'],
       style: { material:0.99, kingAttack:1.50, centre:1.25, pawns:1.05, passers:1.20, rooks:1.20, bishops:1.10, safety:0.95, aggression:0.85, trade:0.30 },
-      depth: 8, timeMs: 2670, blunder: 0.03, spread: 45, contempt: 12 },
+      depth: 6, timeMs: 2670, blunder: 0.03, spread: 45, contempt: 12 },
 
     { id: 'poe', name: 'Poe', elo: 2100, avatar: 'avatars/poe.jpg',
       title: 'The AI Host', country: '🏨', series: 'Altered Carbon',
@@ -330,7 +330,7 @@
       tactic: 'Pure calculation, zero stylistic bias',
       book: ['positional', 'solid'],
       style: { material:1.00, kingAttack:1.00, centre:1.00, pawns:1.00, passers:1.00, rooks:1.00, bishops:1.00, safety:1.00, aggression:0.20, trade:0.20 },
-      depth: 8, timeMs: 1900, blunder: 0.024, spread: 24, contempt: 10 },
+      depth: 5, timeMs: 1900, blunder: 0.024, spread: 24, contempt: 10 },
 
     { id: 'mikasa', name: 'Mikasa', elo: 2150, avatar: 'avatars/mikasa.jpg',
       title: 'The Blade', country: 'JP', series: 'Attack on Titan',
@@ -338,7 +338,7 @@
       tactic: 'Direct strikes, no hesitation, no wasted move',
       book: ['attack'],
       style: { material:1.00, kingAttack:1.50, centre:1.00, pawns:1.00, passers:1.00, rooks:1.00, bishops:1.00, safety:1.10, aggression:1.00, trade:0.00 },
-      depth: 8, timeMs: 1950, blunder: 0.02, spread: 20, contempt: 2 },
+      depth: 5, timeMs: 1950, blunder: 0.02, spread: 20, contempt: 2 },
 
     { id: 'scofield', name: 'Scofield', elo: 2200, avatar: 'avatars/scofield.jpg',
       title: 'The Architect', country: 'US', series: 'Prison Break',
@@ -346,7 +346,7 @@
       tactic: 'Plans the pawn structure ten moves out',
       book: ['positional'],
       style: { material:1.00, kingAttack:1.00, centre:1.15, pawns:1.40, passers:1.40, rooks:1.30, bishops:1.00, safety:1.00, aggression:0.00, trade:0.40 },
-      depth: 8, timeMs: 2100, blunder: 0.018, spread: 18, contempt: 8 },
+      depth: 5, timeMs: 2100, blunder: 0.018, spread: 18, contempt: 8 },
 
     { id: 'tommy', name: 'Tommy', elo: 2250, avatar: 'avatars/tommy.jpg',
       title: 'The Boss', country: 'GB', series: 'Peaky Blinders',
@@ -354,7 +354,7 @@
       tactic: 'Always three moves ahead of your plan',
       book: ['positional', 'tricky'],
       style: { material:1.00, kingAttack:1.00, centre:1.20, pawns:1.20, passers:1.00, rooks:1.30, bishops:1.00, safety:1.00, aggression:0.40, trade:0.40 },
-      depth: 8, timeMs: 2200, blunder: 0.016, spread: 16, contempt: 10 },
+      depth: 5, timeMs: 2200, blunder: 0.016, spread: 16, contempt: 10 },
 
     { id: 'ragnar', name: 'Ragnar', elo: 2300, avatar: 'avatars/ragnar.jpg',
       title: 'The Raider', country: 'NO', series: 'Vikings',
@@ -362,7 +362,7 @@
       tactic: 'Strikes the weak square and vanishes',
       book: ['hyper', 'positional'],
       style: { material:1.01, kingAttack:1.35, centre:1.20, pawns:1.15, passers:1.25, rooks:1.20, bishops:1.05, safety:1.00, aggression:0.70, trade:0.40 },
-      depth: 8, timeMs: 3200, blunder: 0.015, spread: 25, contempt: 10 },
+      depth: 6, timeMs: 3200, blunder: 0.015, spread: 25, contempt: 10 },
 
     { id: 'kovacs', name: 'Kovacs', elo: 2350, avatar: 'avatars/kovacs.jpg',
       title: 'The Envoy', country: '🌐', series: 'Altered Carbon',
@@ -370,7 +370,7 @@
       tactic: 'Reads your setup, adapts, then breaks it',
       book: ['attack', 'hyper'],
       style: { material:1.02, kingAttack:1.45, centre:1.00, pawns:1.00, passers:1.00, rooks:1.20, bishops:1.00, safety:1.00, aggression:0.80, trade:0.00 },
-      depth: 8, timeMs: 2400, blunder: 0.012, spread: 12, contempt: 10 },
+      depth: 5, timeMs: 2400, blunder: 0.012, spread: 12, contempt: 10 },
 
     { id: 'gus', name: 'Gus', elo: 2400, avatar: 'avatars/gus.jpg',
       title: 'The Proprietor', country: 'CL', series: 'Breaking Bad',
@@ -378,7 +378,7 @@
       tactic: 'Immaculate patience, then one clean cut',
       book: ['solid', 'positional'],
       style: { material:1.08, kingAttack:1.00, centre:1.00, pawns:1.35, passers:1.00, rooks:1.25, bishops:1.00, safety:1.40, aggression:0.05, trade:0.60 },
-      depth: 10, timeMs: 2500, blunder: 0.01, spread: 10, contempt: 12 },
+      depth: 5, timeMs: 2500, blunder: 0.01, spread: 10, contempt: 12 },
 
     { id: 'lelouch', name: 'Lelouch', elo: 2450, avatar: 'avatars/lelouch.jpg',
       title: 'The Strategist', country: 'JP', series: 'Code Geass',
@@ -386,7 +386,7 @@
       tactic: 'Twelve moves ahead, all of them traps',
       book: ['tricky', 'positional', 'gambit'],
       style: { material:1.00, kingAttack:1.40, centre:1.25, pawns:1.15, passers:1.25, rooks:1.25, bishops:1.05, safety:1.00, aggression:0.70, trade:0.35 },
-      depth: 10, timeMs: 3600, blunder: 0.008, spread: 16, contempt: 12 },
+      depth: 7, timeMs: 3600, blunder: 0.008, spread: 16, contempt: 12 },
 
     { id: 'heisenberg', name: 'Heisenberg', elo: 2500, avatar: 'avatars/heisenberg.jpg',
       title: 'The Chemist', country: 'US', series: 'Breaking Bad',
@@ -394,7 +394,7 @@
       tactic: 'Trade, convert, destroy. Methodically.',
       book: ['positional', 'solid'],
       style: { material:1.10, kingAttack:1.00, centre:1.00, pawns:1.30, passers:1.50, rooks:1.30, bishops:1.00, safety:1.00, aggression:0.15, trade:0.70 },
-      depth: 10, timeMs: 2800, blunder: 0.006, spread: 7, contempt: 12 },
+      depth: 6, timeMs: 2800, blunder: 0.006, spread: 7, contempt: 12 },
 
     { id: 'levi', name: 'Levi', elo: 2550, avatar: 'avatars/levi.jpg',
       title: 'Humanity’s Strongest', country: 'JP', series: 'Attack on Titan',
@@ -402,7 +402,7 @@
       tactic: 'Blinding tactical speed in sharp positions',
       book: ['attack', 'hyper'],
       style: { material:0.98, kingAttack:1.60, centre:1.00, pawns:1.00, passers:1.00, rooks:1.00, bishops:1.00, safety:0.90, aggression:1.20, trade:-0.20 },
-      depth: 10, timeMs: 2700, blunder: 0.007, spread: 8, contempt: 0 },
+      depth: 6, timeMs: 2700, blunder: 0.007, spread: 8, contempt: 0 },
 
     { id: 'elliot', name: 'Elliot', elo: 2600, avatar: 'avatars/elliot.jpg',
       title: 'The Hacker', country: 'US', series: 'Mr. Robot',
@@ -410,7 +410,7 @@
       tactic: 'Finds the one exploit in your position',
       book: ['tricky', 'hyper'],
       style: { material:1.00, kingAttack:1.30, centre:1.00, pawns:1.00, passers:1.00, rooks:1.35, bishops:1.20, safety:1.00, aggression:0.60, trade:0.00 },
-      depth: 10, timeMs: 2900, blunder: 0.005, spread: 6, contempt: 4 },
+      depth: 6, timeMs: 2900, blunder: 0.005, spread: 6, contempt: 4 },
 
     { id: 'frontman', name: 'Front Man', elo: 2650, avatar: 'avatars/frontman.jpg',
       title: 'The Overseer', country: 'KR', series: 'Squid Game',
@@ -418,7 +418,7 @@
       tactic: 'Gives you nothing, takes everything slowly',
       book: ['solid', 'positional'],
       style: { material:1.08, kingAttack:1.00, centre:1.00, pawns:1.00, passers:1.30, rooks:1.30, bishops:1.00, safety:1.35, aggression:0.00, trade:0.60 },
-      depth: 10, timeMs: 3200, blunder: 0.002, spread: 3, contempt: 14 },
+      depth: 6, timeMs: 3200, blunder: 0.002, spread: 3, contempt: 14 },
 
     { id: 'dolores', name: 'Dolores', elo: 2700, avatar: 'avatars/dolores.jpg',
       title: 'The Awakened', country: 'US', series: 'Westworld',
@@ -426,7 +426,7 @@
       tactic: 'Learns your loop, then breaks out of it',
       book: ['attack', 'positional'],
       style: { material:1.04, kingAttack:1.40, centre:1.00, pawns:1.00, passers:1.40, rooks:1.00, bishops:1.00, safety:1.00, aggression:0.70, trade:0.00 },
-      depth: 10, timeMs: 3100, blunder: 0.003, spread: 4, contempt: 8 },
+      depth: 6, timeMs: 3100, blunder: 0.003, spread: 4, contempt: 8 },
 
     { id: 'tyrion', name: 'Tyrion', elo: 2750, avatar: 'avatars/tyrion.jpg',
       title: 'The Hand', country: 'GB', series: 'Game of Thrones',
@@ -434,7 +434,7 @@
       tactic: 'Outthinks you slowly and completely',
       book: ['positional', 'solid', 'hyper'],
       style: { material:1.04, kingAttack:1.15, centre:1.25, pawns:1.25, passers:1.35, rooks:1.30, bishops:1.05, safety:1.05, aggression:0.35, trade:0.50 },
-      depth: 10, timeMs: 4300, blunder: 0.002, spread: 6, contempt: 14 },
+      depth: 7, timeMs: 4300, blunder: 0.002, spread: 6, contempt: 14 },
 
     { id: 'professor', name: 'The Professor', elo: 2800, avatar: 'avatars/professor.jpg',
       title: 'The Mastermind', country: 'ES', series: 'Money Heist',
@@ -442,7 +442,7 @@
       tactic: 'Every line already prepared in advance',
       book: ['gambit', 'attack', 'positional', 'solid', 'hyper', 'tricky'],
       style: { material:1.00, kingAttack:1.15, centre:1.20, pawns:1.20, passers:1.30, rooks:1.25, bishops:1.00, safety:1.00, aggression:0.00, trade:0.30 },
-      depth: 12, timeMs: 3800, blunder: 0, spread: 0, contempt: 14 },
+      depth: 7, timeMs: 3800, blunder: 0, spread: 0, contempt: 14 },
 
     { id: 'tywin', name: 'Tywin', elo: 2850, avatar: 'avatars/tywin.jpg',
       title: 'The Lion', country: 'GB', series: 'Game of Thrones',
@@ -450,7 +450,7 @@
       tactic: 'Overwhelming force applied without risk',
       book: ['positional', 'solid'],
       style: { material:1.12, kingAttack:1.00, centre:1.00, pawns:1.30, passers:1.00, rooks:1.45, bishops:1.00, safety:1.20, aggression:0.20, trade:0.70 },
-      depth: 12, timeMs: 3600, blunder: 0.0015, spread: 2, contempt: 16 },
+      depth: 7, timeMs: 3600, blunder: 0.0015, spread: 2, contempt: 16 },
 
     { id: 'pablo', name: 'Pablo', elo: 2900, avatar: 'avatars/pablo.jpg',
       title: 'El Patrón', country: 'CO', series: 'Narcos',
@@ -458,7 +458,7 @@
       tactic: 'Pay the material or get crushed outright',
       book: ['attack', 'gambit'],
       style: { material:1.06, kingAttack:1.55, centre:1.00, pawns:1.00, passers:1.00, rooks:1.00, bishops:1.00, safety:1.00, aggression:1.10, trade:0.30 },
-      depth: 12, timeMs: 3800, blunder: 0.001, spread: 2, contempt: 10 },
+      depth: 7, timeMs: 3800, blunder: 0.001, spread: 2, contempt: 10 },
 
     { id: 'sherlock', name: 'Sherlock', elo: 2950, avatar: 'avatars/sherlock.jpg',
       title: 'The Detective', country: 'GB', series: 'Sherlock',
@@ -466,7 +466,7 @@
       tactic: 'Deduces your plan, then dismantles it',
       book: ['positional', 'tricky', 'attack', 'solid'],
       style: { material:1.00, kingAttack:1.20, centre:1.00, pawns:1.20, passers:1.25, rooks:1.25, bishops:1.00, safety:1.00, aggression:0.45, trade:0.25 },
-      depth: 12, timeMs: 4000, blunder: 0, spread: 1, contempt: 12 },
+      depth: 7, timeMs: 4000, blunder: 0, spread: 1, contempt: 12 },
 
     { id: 'lawliet', name: 'L', elo: 3000, avatar: 'avatars/lawliet.jpg',
       title: 'The Investigator', country: 'JP', series: 'Death Note',
@@ -474,7 +474,7 @@
       tactic: 'Baits you into a line you cannot survive',
       book: ['solid', 'tricky'],
       style: { material:1.05, kingAttack:1.25, centre:1.00, pawns:1.00, passers:1.30, rooks:1.00, bishops:1.00, safety:1.25, aggression:0.30, trade:0.50 },
-      depth: 12, timeMs: 4300, blunder: 0, spread: 0, contempt: 14 },
+      depth: 7, timeMs: 4300, blunder: 0, spread: 0, contempt: 14 },
 
     { id: 'aizen', name: 'Aizen', elo: 3050, avatar: 'avatars/aizen.jpg',
       title: 'The Illusion', country: 'JP', series: 'Bleach',
@@ -482,7 +482,7 @@
       tactic: 'You were losing before you sat down',
       book: ['tricky', 'positional', 'hyper', 'gambit'],
       style: { material:1.02, kingAttack:1.45, centre:1.25, pawns:1.20, passers:1.30, rooks:1.30, bishops:1.05, safety:1.00, aggression:0.75, trade:0.25 },
-      depth: 12, timeMs: 4700, blunder: 0, spread: 0, contempt: 14 },
+      depth: 8, timeMs: 4700, blunder: 0, spread: 0, contempt: 14 },
 
     { id: 'light', name: 'Light', elo: 3100, avatar: 'avatars/light.jpg',
       title: 'Kira', country: 'JP', series: 'Death Note',
@@ -490,7 +490,7 @@
       tactic: 'Perfect execution with a killer attack',
       book: ['attack', 'positional', 'gambit', 'hyper'],
       style: { material:1.04, kingAttack:1.50, centre:1.25, pawns:1.00, passers:1.35, rooks:1.30, bishops:1.00, safety:1.00, aggression:0.80, trade:0.00 },
-      depth: 12, timeMs: 4600, blunder: 0, spread: 0, contempt: 14 },
+      depth: 8, timeMs: 4600, blunder: 0, spread: 0, contempt: 14 },
 
     { id: 'mycroft', name: 'Mycroft', elo: 3150, avatar: 'avatars/mycroft.jpg',
       title: 'The Elder Brother', country: 'GB', series: 'Sherlock',
@@ -498,7 +498,7 @@
       tactic: 'Solves the position, then waits',
       book: ['positional', 'solid', 'hyper', 'tricky'],
       style: { material:1.03, kingAttack:1.25, centre:1.25, pawns:1.30, passers:1.40, rooks:1.35, bishops:1.05, safety:1.05, aggression:0.40, trade:0.45 },
-      depth: 12, timeMs: 4900, blunder: 0, spread: 0, contempt: 15 },
+      depth: 8, timeMs: 4900, blunder: 0, spread: 0, contempt: 15 },
 
     { id: 'jonas', name: 'Jonas', elo: 3200, avatar: 'avatars/jonas.jpg',
       title: 'The Traveller', country: 'DE', series: 'Dark',
@@ -506,7 +506,7 @@
       tactic: 'Plays the endgame before it even starts',
       book: ['positional', 'solid', 'hyper', 'tricky', 'attack', 'gambit'],
       style: { material:1.00, kingAttack:1.30, centre:1.25, pawns:1.35, passers:1.50, rooks:1.40, bishops:1.00, safety:1.00, aggression:0.00, trade:0.40 },
-      depth: 12, timeMs: 5000, blunder: 0, spread: 0, contempt: 16 }
+      depth: 8, timeMs: 5000, blunder: 0, spread: 0, contempt: 16 }
   ];
 
   function byId(id) {
