@@ -40,6 +40,12 @@ jobs:
       - name: Progression, backup and charts
         run: node tests/progress_test.js
 
+      - name: Static exchange evaluation is correct
+        run: node tools/see_test.js
+
+      - name: Faster root does not change what the opponents will play
+        run: node tools/root_equiv_test.js
+
   secrets:
     name: No credentials in the tree
     runs-on: ubuntu-latest
