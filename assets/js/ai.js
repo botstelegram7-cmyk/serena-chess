@@ -425,6 +425,10 @@
     }
 
     var legal = 0;
+    /* SEE ordering: the captures that gain the most material go first, so
+       quiescence cutoffs arrive much earlier and the quiet search stays deep. */
+    for (var i = 0; i < moves.length; i++) moves[i]._see = see(g, moves[i]);
+    moves.sort(function (a, b) { return b._see - a._see; });
     for (var i = 0; i < moves.length; i++) {
       var m = moves[i];
 
@@ -766,6 +770,37 @@
     return selectFromScored(game, bot, scored, style);
   }
 
+  /* ------------------------------------------------------------------ traps */
+  /* For every candidate root move, count how many of the opponent's replies
+     walk into a tactic we can punish on the following move. A move that
+     poisons the position -- most replies lose material -- is a trap, and
+     trap-loving personalities (The Professor, Lelouch, Sherlock, ...) are
+     biased toward playing them. This is the "make the opponent blunder"
+     layer: the move looks innocent, but most answers lose material. */
+  function trapBias(game, m, style, bot) {
+    var w = (style && style.trapWeight) || (bot && bot.trapWeight) || 0;
+    if (!w || game.inCheck(game.turn)) return 0;
+    var g2 = new E.Chess(game.fen());
+    g2.makeMove(m);
+    var replies = g2.moves();
+    var n = replies.length, checked = 0, traps = 0;
+    if (!n) return 0;
+    for (var j = 0; j < n && checked < 16; j++) {
+      var r = replies[j];
+      g2.makeMove(r);
+      checked++;
+      var canPunish = false;
+      var our = g2.moves();
+      for (var k = 0; k < our.length && !canPunish; k++) {
+        var o = our[k];
+        if ((o.flags & E.FLAG_CAPTURE) && see(g2, o) >= 0) canPunish = true;
+      }
+      g2.undoMove();
+      if (canPunish) traps++;
+    }
+    return (traps / checked) * w;
+  }
+
   /**
    * Turn a scored root-move list into an actual choice.
    * Extracted so the synchronous and asynchronous search paths cannot drift
@@ -773,14 +808,17 @@
    */
   function selectFromScored(game, bot, scored, style) {
     style = style || bot.style || DEFAULT_STYLE;
-    if (style.aggression || style.trade) {
+    var needBias = style.aggression || style.trade || (bot && bot.trapWeight);
+    if (needBias) {
       for (var k = 0; k < scored.length; k++) {
         scored[k].score += styleBias(game, scored[k].move, style);
+        if (bot && bot.trapWeight) scored[k].score += trapBias(game, scored[k].move, style, bot);
       }
       scored.sort(function (a, b) { return b.score - a.score; });
     }
 
     var best = scored[0].score;
+    if (best > MATE - 100) return scored[0].move;   // take the forced mate
 
     // outright blunder: pick from the weaker half of the move list
     if (bot.blunder && Math.random() < bot.blunder && scored.length > 2) {

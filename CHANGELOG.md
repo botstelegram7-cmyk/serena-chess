@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.9.1 — 2026-11-01
+
+### The Professor is now unequivocally the strongest opponent
+
+- **The Professor (2800)** now searches to **depth 14** with a **5000 ms** clock and a strategic evaluation weight (centre, passed pawns, king safety, rook files), so it plans ahead, squeezes tiny edges and converts them instead of drifting. Blunder chance is zero, as before.
+- **Trap layer ("force the opponent to blunder"):** The Professor and the other strategists (Lelouch, Sherlock, Scofield, Jimmy, Light, Aizen, Lawliet and more) now prefer moves that poison the position — moves after which most opponent replies lose material. A move can look innocent while the answers walk into tactics.
+- **Engine:** quiescence captures are ordered by static exchange evaluation, so tactical searches cut off earlier and the engine reaches deeper quiet positions in the same time. Move generation and perft are untouched: perft(5) is still 4,865,609, and root_equiv_test still passes 100/100.
+- **All bots stronger:** blunder chance reduced about 25% for every opponent from 1200 up, and thinking time raised about 25% from 1600 up, so mid and high Elo characters play closer to their stated level.
+
 ## 1.9 — 2026-10-02
 
 ### Engine strength
