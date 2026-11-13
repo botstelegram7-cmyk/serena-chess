@@ -305,6 +305,10 @@
       var inBook = ply < bookDepth;
       var label = classify(cpLoss, sacrifice, playedScore, onlyMove, inBook);
 
+      var bestCp = mover === E.WHITE
+        ? Math.max(-2000, Math.min(2000, Math.round(bestScore)))
+        : Math.max(-2000, Math.min(2000, Math.round(-bestScore)));
+
       out.push({
         ply: ply,
         san: mv.san,
@@ -312,6 +316,7 @@
         label: label,
         cpLoss: Math.round(cpLoss),
         cp: Math.max(-2000, Math.min(2000, Math.round(mover === E.WHITE ? playedScore : -playedScore))),
+        bestCp: bestCp,
         mate: mateIn === null ? null : (mover === E.WHITE ? mateIn : -mateIn),
         best: bestSan,
         accuracy: moveAccuracy(winChance(bestScore), winChance(playedScore))
@@ -375,13 +380,29 @@
 
     var body = '', line = '';
     for (var i = 0; i < history.moves.length; i++) {
-      var tok = (i % 2 === 0 ? (i / 2 + 1) + '. ' : '') + history.moves[i].san;
+      var san = history.moves[i].san;
+      var nag = '', mark = '';
+      var r = (res.moves || [])[i];
+      if (r) {
+        switch (r.label) {
+          case 'brilliant': nag = ' $3'; mark = '!!'; break;
+          case 'great':     nag = ' $1'; mark = '!'; break;
+          case 'best':      nag = '';   mark = ''; break;
+          case 'excellent': nag = ' $1'; mark = '!'; break;
+          case 'good':      nag = '';   mark = ''; break;
+          case 'book':      nag = '';   mark = ''; break;
+          case 'inaccuracy':nag = ' $5'; mark = '?!'; break;
+          case 'mistake':   nag = ' $2'; mark = '?'; break;
+          case 'blunder':   nag = ' $4'; mark = '??'; break;
+        }
+      }
+      var tok = (i % 2 === 0 ? (i / 2 + 1) + '. ' : '') + san + mark + nag;
       if ((line + ' ' + tok).length > 78) { body += line + '\n'; line = tok; }
       else line = line ? line + ' ' + tok : tok;
     }
-    var res = meta.result || '*';
-    if ((line + ' ' + res).length > 78) { body += line + '\n' + res; }
-    else body += line + (line ? ' ' : '') + res;
+    var resultTag = meta.result || '*';
+    if ((line + ' ' + resultTag).length > 78) { body += line + '\n' + resultTag; }
+    else body += line + (line ? ' ' : '') + resultTag;
 
     return head + '\n\n' + body + '\n';
   }

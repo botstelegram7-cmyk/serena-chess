@@ -1232,14 +1232,29 @@
       var cp = m.mate !== null && m.mate !== undefined
         ? 'M' + Math.abs(m.mate)
         : (m.cp >= 0 ? '+' : '\u2212') + (Math.abs(m.cp) / 100).toFixed(1);
+            var fmtCp = function (cp) {
+        if (m.mate !== null && m.mate !== undefined) return 'M' + Math.abs(m.mate);
+        return (cp >= 0 ? '+' : '\u2212') + (Math.abs(cp) / 100).toFixed(1);
+      };
+      var yourCp = fmtCp(m.cp), bestCp = fmtCp(m.bestCp);
+      var acc = Math.round(m.accuracy) + '%';
+      var lost = m.cpLoss ? ('\u00b7 ' + m.cpLoss + 'cp') : '';
+      var mark = { brilliant:'!!', great:'!', excellent:'!', inaccuracy:'?!', mistake:'?', blunder:'??' }[m.label] || '';
       b.innerHTML =
         '<span class="rev-no">' + num + (m.color === E.WHITE ? '.' : '\u2026') + '</span>' +
-        '<span class="rev-san">' + m.san + '</span>' +
-        '<span class="rev-lab lab-' + m.label + '">' + RV.LABELS[m.label].name +
-          (m.label === 'mistake' || m.label === 'blunder' || m.label === 'inaccuracy'
-            ? '<span class="rev-best"> \u00b7 best ' + (m.best || '?') + '</span>' : '') +
-        '</span>' +
-        '<span class="rev-cp">' + cp + '</span>';
+        '<div class="rev-side you">' +
+          '<b>You</b>' +
+          '<span class="rev-san">' + m.san + mark + '</span>' +
+          '<span class="rev-eval">' + yourCp + '</span>' +
+          '<span class="rev-acc">' + acc + '</span>' +
+        '</div>' +
+        '<div class="rev-side best">' +
+          '<b>Best</b>' +
+          '<span class="rev-san">' + (m.best || '\u2014') + '</span>' +
+          '<span class="rev-eval">' + bestCp + '</span>' +
+          '<span class="rev-acc ' + (m.label === 'best' || m.label === 'book' ? 'lab-best' : '') + '">' + lost + '</span>' +
+        '</div>' +
+        '<span class="rev-lab lab-' + m.label + '">' + RV.LABELS[m.label].name + '</span>';
       b.addEventListener('click', function () {
         if (hist === G.hist) { go('game'); navTo(m.ply + 1); }
       });

@@ -801,48 +801,83 @@
     return (traps / checked) * w;
   }
 
+  /* ------------------------------------------------------------------ quick win */
+  /* "Beat the opponent in as few moves as possible" layer. Used by the most
+     attacking characters (The Professor, Levi, Pablo, ...). It nudges the
+     choice toward moves that give check, squeeze the enemy king's mobility,
+     and close the mate net -- so the bot hunts a fast finish instead of
+     drifting into a long, drawish grind. */
+  function quickWinBias(game, m, bot) {
+    var w = bot && bot.quickWin || 0;
+    if (!w) return 0;
+    var bonus = 0;
+    var g2 = new E.Chess(game.fen());
+    g2.makeMove(m);
+    var check = g2.isAttacked(g2.kings[g2.turn], g2.turn ^ 1);
+    if (check) bonus += 50 * w;                                // a check forces a reply
+    var after = g2.moves().length;                             // opponent mobility now
+    if (after <= 2) bonus += 120 * w;                          // almost mated
+    else if (after <= 5) bonus += 60 * w;                      // king boxing in
+    g2.undoMove();
+    return bonus;
+  }
+
   /**
    * Turn a scored root-move list into an actual choice.
    * Extracted so the synchronous and asynchronous search paths cannot drift
    * apart — a bot must play identically whichever driver produced the list.
+   *
+   * Deterministic bots (spread 0, blunder 0) play the engine's exact best
+   * move — full strength, no personality distortion. Personality bias
+   * (aggression / traps / quick-win) only ever acts as a tiebreaker among
+   * moves already inside the tolerance window of a weaker, randomised bot.
    */
   function selectFromScored(game, bot, scored, style) {
     style = style || bot.style || DEFAULT_STYLE;
-    var needBias = style.aggression || style.trade || (bot && bot.trapWeight);
-    if (needBias) {
-      for (var k = 0; k < scored.length; k++) {
-        scored[k].score += styleBias(game, scored[k].move, style);
-        if (bot && bot.trapWeight) scored[k].score += trapBias(game, scored[k].move, style, bot);
-      }
-      scored.sort(function (a, b) { return b.score - a.score; });
-    }
+    var deterministic = bot && bot.spread === 0 && bot.blunder === 0;
 
     var best = scored[0].score;
     if (best > MATE - 100) return scored[0].move;   // take the forced mate
 
-    // outright blunder: pick from the weaker half of the move list
-    if (bot.blunder && Math.random() < bot.blunder && scored.length > 2) {
-      var tail = scored.slice(Math.max(1, Math.floor(scored.length * 0.35)));
-      // never blunder away a forced mate that's available
-      if (best < MATE - 100) {
-        return tail[Math.floor(Math.random() * tail.length)].move;
+    if (!deterministic) {
+      var needBias = style.aggression || style.trade || (bot && bot.trapWeight) || (bot && bot.quickWin);
+      if (needBias) {
+        for (var k = 0; k < scored.length; k++) {
+          scored[k].score += styleBias(game, scored[k].move, style);
+          if (bot && bot.trapWeight) scored[k].score += trapBias(game, scored[k].move, style, bot);
+          if (bot && bot.quickWin) scored[k].score += quickWinBias(game, scored[k].move, bot);
+        }
+        scored.sort(function (a, b) { return b.score - a.score; });
+        best = scored[0].score;
       }
+
+      // outright blunder: pick from the weaker half of the move list
+      if (bot.blunder && Math.random() < bot.blunder && scored.length > 2) {
+        var tail = scored.slice(Math.max(1, Math.floor(scored.length * 0.35)));
+        // never blunder away a forced mate that's available
+        if (best < MATE - 100) {
+          return tail[Math.floor(Math.random() * tail.length)].move;
+        }
+      }
+
+      // otherwise choose randomly among moves within `spread` centipawns of best
+      var window = bot.spread || 0;
+      var pool = scored.filter(function (x) { return x.score >= best - window; });
+      if (!pool.length) pool = [scored[0]];
+
+      // weight the better moves a little higher
+      var weights = pool.map(function (x, i) { return 1 / (1 + i * 0.6); });
+      var total = weights.reduce(function (a, b) { return a + b; }, 0);
+      var r = Math.random() * total;
+      for (var i = 0; i < pool.length; i++) {
+        r -= weights[i];
+        if (r <= 0) return pool[i].move;
+      }
+      return pool[0].move;
     }
 
-    // otherwise choose randomly among moves within `spread` centipawns of best
-    var window = bot.spread || 0;
-    var pool = scored.filter(function (x) { return x.score >= best - window; });
-    if (!pool.length) pool = [scored[0]];
-
-    // weight the better moves a little higher
-    var weights = pool.map(function (x, i) { return 1 / (1 + i * 0.6); });
-    var total = weights.reduce(function (a, b) { return a + b; }, 0);
-    var r = Math.random() * total;
-    for (var i = 0; i < pool.length; i++) {
-      r -= weights[i];
-      if (r <= 0) return pool[i].move;
-    }
-    return pool[0].move;
+    // deterministic full-strength bot: engine best, every time
+    return scored[0].move;
   }
 
   /* ---------------------------------------------- non-blocking search */

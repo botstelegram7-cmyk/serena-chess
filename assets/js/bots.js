@@ -266,7 +266,7 @@
       tactic: 'All-out assault on your king, cost ignored',
       book: ['gambit', 'attack'],
       style: { material:0.92, kingAttack:1.80, centre:1.00, pawns:1.00, passers:1.00, rooks:1.00, bishops:1.00, safety:0.50, aggression:1.30, trade:-0.40 },
-      depth: 7, timeMs: 1440, blunder: 0.045, spread: 58, contempt: -12 },
+      depth: 7, timeMs: 1440, blunder: 0.045, spread: 58, contempt: -12, quickWin: 0.6 },
 
     { id: 'sangwoo', name: 'Sang-woo', elo: 1750, avatar: 'avatars/sangwoo.jpg',
       title: 'The Graduate', country: 'KR', series: 'Squid Game',
@@ -322,7 +322,7 @@
       tactic: 'Casual brilliance, infinite confidence',
       book: ['hyper', 'attack', 'tricky'],
       style: { material:0.99, kingAttack:1.50, centre:1.25, pawns:1.05, passers:1.20, rooks:1.20, bishops:1.10, safety:0.95, aggression:0.85, trade:0.30 },
-      depth: 8, timeMs: 3340, blunder: 0.023, spread: 45, contempt: 12 },
+      depth: 8, timeMs: 3340, blunder: 0.023, spread: 45, contempt: 12, quickWin: 0.5 },
 
     { id: 'poe', name: 'Poe', elo: 2100, avatar: 'avatars/poe.jpg',
       title: 'The AI Host', country: '🏨', series: 'Altered Carbon',
@@ -402,7 +402,7 @@
       tactic: 'Blinding tactical speed in sharp positions',
       book: ['attack', 'hyper'],
       style: { material:0.98, kingAttack:1.60, centre:1.00, pawns:1.00, passers:1.00, rooks:1.00, bishops:1.00, safety:0.90, aggression:1.20, trade:-0.20 },
-      depth: 10, timeMs: 3380, blunder: 0.005, spread: 8, contempt: 0 },
+      depth: 10, timeMs: 3380, blunder: 0.005, spread: 8, contempt: 0, quickWin: 0.7 },
 
     { id: 'elliot', name: 'Elliot', elo: 2600, avatar: 'avatars/elliot.jpg',
       title: 'The Hacker', country: 'US', series: 'Mr. Robot',
@@ -438,11 +438,11 @@
 
     { id: 'professor', name: 'The Professor', elo: 2800, avatar: 'avatars/professor.jpg',
       title: 'The Mastermind', country: 'ES', series: 'Money Heist',
-      blurb: 'He planned for this position. He planned for every position. He sees the traps before they are sprung, converts the smallest edge and never blunders. The strongest bot here.',
-      tactic: 'Every line prepared in advance, quiet traps, surgical endgame conversion, zero mistakes',
+      blurb: 'He planned for this position. He planned for every position. He hunts the fastest forced win, sets quiet traps, converts the smallest edge and never blunders. The strongest bot here.',
+      tactic: 'Fastest forced win first — king hunt, quick traps, surgical conversion, zero mistakes',
       book: ['gambit', 'attack', 'positional', 'solid', 'hyper', 'tricky'],
-      style: { material:1.02, kingAttack:1.15, centre:1.35, pawns:1.25, passers:1.45, rooks:1.35, bishops:1.05, safety:1.15, aggression:0.05, trade:0.45 },
-      depth: 14, timeMs: 5000, blunder: 0, spread: 0, contempt: 16, trapWeight: 80 },
+      style: { material:1.02, kingAttack:1.25, centre:1.35, pawns:1.25, passers:1.45, rooks:1.35, bishops:1.05, safety:1.15, aggression:0.30, trade:0.45 },
+      depth: 14, timeMs: 5000, blunder: 0, spread: 0, contempt: 16, trapWeight: 80, quickWin: 1.0 },
     { id: 'tywin', name: 'Tywin', elo: 2850, avatar: 'avatars/tywin.jpg',
       title: 'The Lion', country: 'GB', series: 'Game of Thrones',
       blurb: 'Never gambles, never bluffs, never forgives a weak square. Tywin simply brings more force than you can answer.',
@@ -457,7 +457,7 @@
       tactic: 'Pay the material or get crushed outright',
       book: ['attack', 'gambit'],
       style: { material:1.06, kingAttack:1.55, centre:1.00, pawns:1.00, passers:1.00, rooks:1.00, bishops:1.00, safety:1.00, aggression:1.10, trade:0.30 },
-      depth: 12, timeMs: 4750, blunder: 0.001, spread: 2, contempt: 10, trapWeight: 35 },
+      depth: 12, timeMs: 4750, blunder: 0.001, spread: 2, contempt: 10, trapWeight: 35, quickWin: 0.6 },
 
     { id: 'sherlock', name: 'Sherlock', elo: 2950, avatar: 'avatars/sherlock.jpg',
       title: 'The Detective', country: 'GB', series: 'Sherlock',
@@ -481,7 +481,7 @@
       tactic: 'You were losing before you sat down',
       book: ['tricky', 'positional', 'hyper', 'gambit'],
       style: { material:1.02, kingAttack:1.45, centre:1.25, pawns:1.20, passers:1.30, rooks:1.30, bishops:1.05, safety:1.00, aggression:0.75, trade:0.25 },
-      depth: 12, timeMs: 5880, blunder: 0.000, spread: 0, contempt: 14, trapWeight: 65 },
+      depth: 12, timeMs: 5880, blunder: 0.000, spread: 0, contempt: 14, trapWeight: 65, quickWin: 0.5 },
 
     { id: 'light', name: 'Light', elo: 3100, avatar: 'avatars/light.jpg',
       title: 'Kira', country: 'JP', series: 'Death Note',
@@ -489,7 +489,7 @@
       tactic: 'Perfect execution with a killer attack',
       book: ['attack', 'positional', 'gambit', 'hyper'],
       style: { material:1.04, kingAttack:1.50, centre:1.25, pawns:1.00, passers:1.35, rooks:1.30, bishops:1.00, safety:1.00, aggression:0.80, trade:0.00 },
-      depth: 12, timeMs: 5750, blunder: 0.000, spread: 0, contempt: 14, trapWeight: 45 },
+      depth: 12, timeMs: 5750, blunder: 0.000, spread: 0, contempt: 14, trapWeight: 45, quickWin: 0.6 },
 
     { id: 'mycroft', name: 'Mycroft', elo: 3150, avatar: 'avatars/mycroft.jpg',
       title: 'The Elder Brother', country: 'GB', series: 'Sherlock',

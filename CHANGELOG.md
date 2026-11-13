@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.9.2 — 2026-11-01
+
+### Full engine strength — regression fix
+- **The Professor (2800) and all top bots now play the engine's exact best move.** Personality/trap/quick-win bias only applies to weaker, randomised bots (spread > 0); deterministic bots (spread 0, blunder 0) get zero distortion, so they never trade the engine-best move for a biased alternative. This restores and exceeds the 1.9 strength level — 1.9.1's regression is fixed.
+- Professor: depth 14, 5000 ms, zero blunders, strategic style (centre/passed-pawns/king-safety/rooks), plays fastest forced win.
+
+### Chess.com-style game review
+- **Side-by-side move comparison:** every row now shows **Your move vs Engine best move** with eval (+/–cp), accuracy %, and move quality (!! ! ?! ? ??) for both sides, plus cp lost.
+- Review keeps the eval graph, per-side accuracy, breakdown counts and opening name.
+
+### Improved PGN export
+- Moves annotated with NAGs ($1 good, $2 mistake, $3 brilliant, $4 blunder, $5 inaccuracy) and inline marks (!, ??, ?!, !?), so exported PGN reads like Chess.com/Lichess analysis.
+
 ## 1.9.1 — 2026-11-01
 
 ### The Professor is now unequivocally the strongest opponent
