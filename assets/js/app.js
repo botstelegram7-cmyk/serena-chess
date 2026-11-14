@@ -54,9 +54,19 @@
 
   var RV = window.ChessReview;
   var ON = window.Online;
+  var HY = window.Hybrid;
+  var EC = window.Economy;
+
+  /* ── hybrid engine + economy init ─────────────────────────────────── */
+  if (HY) { HY.configure(settings.srvUrl || ''); HY.onState(function () { refreshHome(); }); }
+  if (EC) { EC.init(Store, profile); }
 
   var profile = Store.get('chess.profile', { name: '', color: AVATAR_COLORS[0], rating: 1200 });
   if (typeof profile.rating !== 'number') profile.rating = 1200;
+  if (typeof profile.gold !== 'number') profile.gold = 200;
+  if (!profile.items) profile.items = { board: ['classic'], piece: ['classic'], avatar: ['default'] };
+  if (!profile.equipped) profile.equipped = { board: 'classic', piece: 'classic', avatar: 'default' };
+  if (EC) { EC.init(Store, profile); }
   var archive = Store.get('chess.archive', []);
   var stats   = Store.get('chess.stats', { w: 0, l: 0, d: 0, best: 0 });
   var settings = Object.assign({
@@ -763,28 +773,57 @@
 
       /* The search yields between slices rather than holding the thread for
          its whole budget, so the clock keeps ticking, animations keep running
-         and taps keep landing while a bot thinks. */
-      G.search = AI.pickMoveAsync(g, G.bot, hist, function (mv) {
-        G.search = null;
-        if (!mv) { try { mv = g.moves()[0] || null; } catch (e2) { mv = null; } }
+         and taps keep landing while a bot thinks.
 
-        /* A person does not answer in a constant 300 ms. Forced recaptures come
-           back instantly, hard positions get a long stare. */
-        var want = 300;
-        if (G.bot && G.bot.human) {
-          var forced = g.moves().length <= 2 ||
-                       (last && mv && mv.to === last.to && (mv.flags & E.FLAG_CAPTURE));
-          want = HU.thinkMs(g, G.bot, forced);
-        }
-        var pause = Math.max(0, want - (Date.now() - started));
-        setTimeout(function () {
-          $('#top-thinking').hidden = true;
-          G.thinking = false;
-          if (G.over) return;
-          if (!mv) { finishGame(g.status()); return; }
-          applyMove(mv, false);
-        }, pause);
-      });
+         Hybrid mode: when online vs a bot, ask the Voroa backend (native
+         Stockfish) for the best move. When offline or the cloud is down, fall
+         back to the bundled JS engine. */
+      var fen = g.fen(), color = g.turn;
+      if (HY && HY.configured() && HY.isOnline() && G.mode === 'bot' && !G.bot.human) {
+        HY.getBestMove(fen, color, G.bot, function (err, moveSan, cloud) {
+          G.search = null;
+          var mv = null;
+          if (moveSan) {
+            var legal = g.moves();
+            for (var li = 0; li < legal.length; li++) {
+              var s = g.moveToSan(legal[li], legal).replace(/[+#!?]/g, '');
+              if (s === moveSan.replace(/[+#!?]/g, '')) { mv = legal[li]; break; }
+            }
+          }
+          if (!mv) { try { mv = g.moves()[0] || null; } catch (e2) { mv = null; } }
+          var want = 300;
+          var pause = Math.max(0, want - (Date.now() - started));
+          setTimeout(function () {
+            $('#top-thinking').hidden = true;
+            G.thinking = false;
+            if (G.over) return;
+            if (!mv) { finishGame(g.status()); return; }
+            applyMove(mv, false);
+          }, pause);
+        });
+      } else {
+        G.search = AI.pickMoveAsync(g, G.bot, hist, function (mv) {
+          G.search = null;
+          if (!mv) { try { mv = g.moves()[0] || null; } catch (e2) { mv = null; } }
+
+          /* A person does not answer in a constant 300 ms. Forced recaptures come
+             back instantly, hard positions get a long stare. */
+          var want = 300;
+          if (G.bot && G.bot.human) {
+            var forced = g.moves().length <= 2 ||
+                         (last && mv && mv.to === last.to && (mv.flags & E.FLAG_CAPTURE));
+            want = HU.thinkMs(g, G.bot, forced);
+          }
+          var pause = Math.max(0, want - (Date.now() - started));
+          setTimeout(function () {
+            $('#top-thinking').hidden = true;
+            G.thinking = false;
+            if (G.over) return;
+            if (!mv) { finishGame(g.status()); return; }
+            applyMove(mv, false);
+          }, pause);
+        });
+      }
     }, 40);
   }
 
@@ -889,6 +928,31 @@
       delta = applyRating(oppRating(), score);
       archiveGame(st, score, delta);
       onGameFinished(score);
+
+      /* gold + elo economy */
+      if (EC) {
+        var rew = EC.award(oppRating(), score);
+        if (rew.delta !== 0) {
+          sub += '  ·  ' + (rew.delta > 0 ? '+' : '') + rew.delta + ' rating';
+          sub += '  ·  ' + (rew.gold > 0 ? '+' : '') + rew.gold + ' gold';
+        }
+        $('#ov-sub').textContent = sub;
+
+        /* sync rated result to the Voroa backend when online */
+        if (HY && HY.configured() && HY.isOnline() && G.mode === 'online' && G.opp && G.opp.id) {
+          var payload = { winnerId: null, loserId: null, draw: false };
+          if (score === 0.5) { payload.draw = true; payload.winnerId = profile.name; payload.loserId = G.opp.id; }
+          else if (score === 1 && G.myColor === E.WHITE) { payload.winnerId = profile.name; payload.loserId = G.opp.id; }
+          else if (score === 1 && G.myColor === E.BLACK) { payload.winnerId = G.opp.id; payload.loserId = profile.name; }
+          else if (score === 0) { payload.winnerId = G.opp.id; payload.loserId = profile.name; }
+          try {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', HY.configured() && settings.srvUrl ? settings.srvUrl.replace(/\/$/,'') + '/result' : '/result', true);
+            xhr.setRequestHeader('content-type', 'application/json');
+            xhr.send(JSON.stringify(payload));
+          } catch (e) { /* best effort sync */ }
+        }
+      }
     }
 
     $('#ov-icon').textContent = icon;
@@ -1338,6 +1402,7 @@
     $('#me-name').textContent = shown;
     $('#me-rating').textContent = profile.rating;
     $('#me-tier').textContent = BOTS.tier(profile.rating).label;
+    if ($('#me-gold')) $('#me-gold').textContent = profile.gold;
 
     $('#hm-w').textContent = stats.w;
     $('#hm-l').textContent = stats.l;
@@ -1645,6 +1710,51 @@
     $('#st-l').textContent = stats.l;
     $('#st-d').textContent = stats.d;
     $('#st-best').textContent = stats.best || '–';
+    if ($('#st-gold')) $('#st-gold').textContent = profile.gold;
+    if ($('#st-elo')) $('#st-elo').textContent = profile.rating;
+    if ($('#shop-gold')) $('#shop-gold').textContent = profile.gold;
+    if ($('#shop-elo')) $('#shop-elo').textContent = profile.rating;
+  }
+
+  /* ──────────────────────────────────────────────────────────── shop ─── */
+  function openShop() {
+    var grid = $('#shop-grid'); grid.innerHTML = '';
+    if (!EC) {
+      grid.innerHTML = '<div class="hint-line">Shop unavailable.</div>';
+      return;
+    }
+    var cat = EC.catalogue();
+    var order = ['board', 'piece', 'avatar'];
+    order.forEach(function (type) {
+      var items = cat[type] || [];
+      if (!items.length) return;
+      var h = document.createElement('div');
+      h.className = 'section-label';
+      h.textContent = { board: 'Boards', piece: 'Pieces', avatar: 'Avatars' }[type];
+      grid.appendChild(h);
+      items.forEach(function (it) {
+        var b = document.createElement('button');
+        b.className = 'shop-item' + (it.equipped ? ' equipped' : '') + (it.owned ? '' : ' locked');
+        var badge = it.equipped ? 'Equipped' : (it.owned ? 'Owned' : it.cost + 'g');
+        b.innerHTML =
+          '<div class="si-name">' + it.name + '</div>' +
+          '<div class="si-badge">' + badge + '</div>';
+        b.addEventListener('click', function () {
+          if (it.equipped) return;
+          if (!it.owned) {
+            var r = EC.buy(type, it.id);
+            if (!r.ok) { toast(r.error === 'not_enough_gold' ? 'Not enough gold' : 'Purchase failed'); return; }
+          } else {
+            EC.equip(type, it.id);
+          }
+          refreshProfile(); refreshHome(); openShop();
+        });
+        grid.appendChild(b);
+      });
+    });
+    $('#shop-gold').textContent = profile.gold;
+    $('#shop-elo').textContent = profile.rating;
+    go('shop');
   }
 
   $('#name-input').addEventListener('input', function () {
@@ -2059,6 +2169,7 @@
     if (a === 'backup-import')  { var rf = $('#restore-file'); if (rf) rf.click(); return; }
     if (a === 'backup-confirm') { doRestore(); return; }
     if (a === 'google-signin')  { toast('Add a Google client id in Settings first.', 2600); return; }
+    if (a === 'open-shop')      { openShop(); return; }
 
     if (a === 'puzzle-skip')     { loadPuzzle(puz.idx + 1); return; }
     if (a === 'puzzle-retry')    { loadPuzzle(puz.idx); return; }

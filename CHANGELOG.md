@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.9.3 — 2026-11-01
+
+### Hybrid Stockfish engine (cloud + offline fallback)
+- **Online vs bot:** the app asks the Voroa backend (`POST /stockfish`) for the best move, computed by a native Stockfish binary. Old Android WebViews no longer need to calculate locally.
+- **Offline:** falls back to the bundled JS engine automatically via `navigator.onLine` + health probing, so play never stops.
+- `Hybrid.getBestMove(fen, color, bot, cb)` — cloud first, local fallback.
+
+### Real-time online matchmaking (server)
+- `server/index.js` now runs on Voroa/any Node host with:
+  - Matchmaking queues with Elo-based rating windows
+  - Native Stockfish API endpoint (`POST /stockfish`)
+  - User profiles: Elo, gold, unlocked items, equipped cosmetics
+  - Shop API (`GET /shop`, `POST /purchase`, `POST /equip`)
+  - Rated game result sync (`POST /result`)
+  - Persistent profiles saved to `data.json`
+
+### Elo rating & in-game economy
+- **Elo:** standard calculation (K=24, provisional K=40 for first 15 games) applied to every rated bot/online game. Shown on profile and home.
+- **Gold:** win = 40g, draw = 20g, loss = 10g. Starting balance 200g.
+- **Shop:** buy/unlock board themes, piece skins, and avatars. Equip any owned item. Syncs to the backend when online; persists locally when offline.
+
 ## 1.9.2 — 2026-11-01
 
 ### Full engine strength — regression fix

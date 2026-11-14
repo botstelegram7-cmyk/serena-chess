@@ -62,6 +62,7 @@
         <span class="me-text">
           <span class="me-name" id="me-name">Player</span>
           <span class="me-sub"><b id="me-rating">1200</b><i id="me-tier">Casual</i></span>
+        <span class="me-gold" id="me-gold">0</span>
         </span>
       </button>
       <button class="icon-btn" data-go="settings" aria-label="Settings"><svg class="ic"><use href="#i-gear"/></svg></button>
@@ -100,6 +101,17 @@
         <span class="mc-sub">Same device</span>
       </button>
     </div>
+
+    <!-- shop -->
+    <div class="section-label row-label">
+      <span>Shop</span>
+      <button class="link-btn" data-action="open-shop">Browse</button>
+    </div>
+    <button class="train-card" data-action="open-shop">
+      <svg class="ic ic-lg"><use href="#i-trophy"/></svg>
+      <span class="tc-title">Shop</span>
+      <span class="tc-sub" id="shop-sub">Spend gold</span>
+    </button>
 
     <!-- train -->
     <div class="section-label">Train</div>
@@ -186,6 +198,8 @@
       <div class="stat"><div class="stat-val" id="st-l">0</div><div class="stat-key">Losses</div></div>
       <div class="stat"><div class="stat-val" id="st-d">0</div><div class="stat-key">Draws</div></div>
       <div class="stat"><div class="stat-val" id="st-best">–</div><div class="stat-key">Best win</div></div>
+      <div class="stat"><div class="stat-val" id="st-gold">0</div><div class="stat-key">Gold</div></div>
+      <div class="stat"><div class="stat-val" id="st-elo">1200</div><div class="stat-key">Elo</div></div>
     </div>
     <button class="btn btn-ghost danger" data-action="reset-stats">Reset statistics</button>
   </div>
@@ -435,7 +449,24 @@
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════ GAME ═══ -->
+<!-- ══════════════════════════════════════════════════════ SHOP ═══ -->
+
+<section class="screen" id="screen-shop">
+  <header class="app-bar">
+    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="app-title">Shop</div>
+    <div class="shop-pill">
+      <span class="shop-gold"><svg class="ic" style="width:14px;height:14px"><use href="#i-trophy"/></svg><b id="shop-gold">0</b> gold</span>
+      <span class="shop-elo"><svg class="ic" style="width:14px;height:14px"><use href="#i-chart"/></svg><b id="shop-elo">1200</b> Elo</span>
+    </div>
+  </header>
+  <div class="scroll">
+    <div class="shop-grid" id="shop-grid"></div>
+    <div class="hint-line">Buy cosmetics with gold earned from wins. Purchases sync to the Voroa backend when online.</div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════ GAME ═══ -->
 <section class="screen" id="screen-game">
   <header class="app-bar">
     <button class="icon-btn" data-action="leave-game"><svg class="ic"><use href="#i-back"/></svg></button>
@@ -827,6 +858,8 @@
     <script src="js/charts.js"></script>
 <script src="js/review.js"></script>
 <script src="js/online.js"></script>
+<script src="js/hybrid.js"></script>
+<script src="js/economy.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/chat.js"></script>
 <script src="js/app.js"></script>
