@@ -2404,9 +2404,12 @@
 
   /* ───────────────────────────────────────────────── global actions ─── */
   /* tapping the dark area around the result card dismisses it */
-  $('#board-overlay').addEventListener('click', function (e) {
-    if (e.target === this) showResult(false);
-  });
+  var boardOverlay = $('#board-overlay');
+  if (boardOverlay) {
+    boardOverlay.addEventListener('click', function (e) {
+      if (e.target === this) showResult(false);
+    });
+  }
 
   /* ── mobile touch fix ──
    * The click-only delegation below leaves buttons dead on many Android
