@@ -67,6 +67,29 @@
   if (!profile.items) profile.items = { board: ['classic'], piece: ['classic'], avatar: ['default'] };
   if (!profile.equipped) profile.equipped = { board: 'classic', piece: 'classic', avatar: 'default' };
   if (EC) { EC.init(Store, profile); }
+
+  /* ── gamified state (Duolingo-style) ────────────────────────────── */
+  if (typeof profile.streak !== 'number') profile.streak = 0;
+  if (typeof profile.gems !== 'number') profile.gems = 0;
+  if (typeof profile.xp !== 'number') profile.xp = 0;
+  if (typeof profile.level !== 'number') profile.level = 1;
+  var PATH = [
+    { id: 'opening-basics',   title: 'Opening Basics',   icon: 'i-sparkle', color: '#4caf50' },
+    { id: 'tactics',          title: 'Tactics',          icon: 'i-target',  color: '#ff9800' },
+    { id: 'middlegame',       title: 'Middlegame',       icon: 'i-bot',     color: '#2196f3' },
+    { id: 'endgame',          title: 'Endgame',          icon: 'i-flag',    color: '#9c27b0' },
+    { id: 'mastery',          title: 'Mastery',          icon: 'i-trophy',  color: '#e91e63' },
+  ];
+  var pathState = Store.get('chess.path', { completed: [], current: 0 });
+  if (!pathState.completed) pathState.completed = [];
+  if (typeof pathState.current !== 'number') pathState.current = 0;
+
+  function savePath() { Store.set('chess.path', pathState); }
+  function pathPercent() { return Math.round((pathState.completed.length / PATH.length) * 100); }
+  function levelForXp(xp) { return 1 + Math.floor(xp / 500); }
+  function xpForLevel(lv) { return (lv - 1) * 500; }
+  function xpProgress(xp) { return xp - xpForLevel(levelForXp(xp)); }
+
   var archive = Store.get('chess.archive', []);
   var stats   = Store.get('chess.stats', { w: 0, l: 0, d: 0, best: 0 });
   var settings = Object.assign({
@@ -157,6 +180,7 @@
     if (el) el.classList.add('active');
     current = name;
     if (name === 'home') refreshHome();
+    if (name === 'learn') refreshLearn();
     if (name === 'profile') refreshProfile();
     if (name === 'settings') refreshSettingsValues();
     if (name === 'puzzles') loadPuzzle(puz.idx);
@@ -1394,38 +1418,286 @@
     });
   }
 
-  /* ──────────────────────────────────────────────────────────── home ─── */
-  function refreshHome() {
+  /* ──────────────────────────────── top bar / gamified ────────────────── */
+  function applyAvatar(el) {
+    if (!el) return;
+    var c = profile.color || AVATAR_COLORS[0];
+    var letter = (profile.name || 'P').charAt(0).toUpperCase();
+    el.textContent = letter;
+    el.style.background = c;
+    var idx = AVATAR_COLORS.indexOf(c);
+    el.style.color = idx % 2 === 0 ? '#fff' : '#111';
+  }
+
+  function refreshTopBar() {
     var shown = profile.name || 'Player';
     var corner = $('#corner-avatar');
-    applyAvatar(corner);
-    $('#me-name').textContent = shown;
-    $('#me-rating').textContent = profile.rating;
-    $('#me-tier').textContent = BOTS.tier(profile.rating).label;
-    if ($('#me-gold')) $('#me-gold').textContent = profile.gold;
+    if (corner) { applyAvatar(corner); }
+    var meName = $('#me-name');
+    if (meName) meName.textContent = shown;
+    var meTier = $('#me-tier');
+    if (meTier) meTier.textContent = BOTS ? BOTS.tier(profile.rating).label : 'Casual';
+    var streakEl = $('#streak-val');
+    if (streakEl) streakEl.textContent = profile.streak;
+    var gemsEl = $('#gems-val');
+    if (gemsEl) gemsEl.textContent = profile.gems;
+    var pg = $('#pill-gems');
+    if (pg) pg.textContent = profile.gems;
+    var lv = levelForXp(profile.xp);
+    if (meTier) meTier.textContent = 'Lv. ' + lv + ' · ' + (BOTS ? BOTS.tier(profile.rating).label : 'Casual');
+  }
+
+  function awardXp(amount) {
+    profile.xp = (profile.xp || 0) + amount;
+    saveProfile();
+    refreshTopBar();
+  }
+
+  function awardGems(amount) {
+    profile.gems = (profile.gems || 0) + amount;
+    saveProfile();
+    refreshTopBar();
+  }
+
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+  /* ──────────────────────────────────────────────────────────── home ─── */
+  function refreshHome() {
+    refreshTopBar();
 
     $('#hm-w').textContent = stats.w;
     $('#hm-l').textContent = stats.l;
     $('#hm-d').textContent = stats.d;
-    $('#hm-b').textContent = stats.best || '\u2013';
-    var ps = $('#puz-sub');
-    if (ps) ps.textContent = puz.solved.length + ' / ' + PZ.PUZZLES.length + ' solved';
-    var as = $('#arch-sub');
-    if (as) as.textContent = archive.length ? archive.length + ' played' : 'Review';
+    var total = (stats.w || 0) + (stats.l || 0) + (stats.d || 0);
+    var wr = total ? Math.round((stats.w / total) * 100) : '–';
+    $('#hm-wr').textContent = (wr === '–' ? '–' : wr + '%');
 
-    var saved = Store.get('chess.game', null);
-    var card = $('#resume-card');
-    if (saved && saved.ply > 0) {
-      card.hidden = false;
-      $('#resume-title').textContent = saved.mode === 'bot'
-        ? 'vs ' + BOTS.byId(saved.botId).name : 'Pass & Play';
-      $('#resume-sub').textContent = 'Move ' + (Math.floor(saved.ply / 2) + 1)
-        + ' \u00b7 ' + (saved.mode === 'bot' ? BOTS.byId(saved.botId).elo + ' Elo' : 'two players');
-    } else card.hidden = true;
+    var lv = levelForXp(profile.xp);
+    $('#hero-title').textContent = total ? 'Keep going, ' + (profile.name || 'Player') : 'Welcome, ' + (profile.name || 'Player');
+    $('#hero-sub').textContent = 'Level ' + lv + ' · ' + pathPercent() + '% of path';
+    $('#hero-cta').textContent = pathState.completed.length < PATH.length ? 'Continue Lesson' : 'Path complete!';
+
+    $('#daily-streak-val').textContent = profile.streak;
+    $('#daily-reward').textContent = '+' + (10 + profile.streak);
+
+    renderPathNodes($('#path-row'), 'home');
+  }
+
+  function renderPathNodes(container, ctx) {
+    container.innerHTML = '';
+    PATH.forEach(function (node, i) {
+      var done = pathState.completed.indexOf(node.id) >= 0;
+      var open = i <= pathState.current || done;
+      var el = document.createElement('div');
+      el.className = 'path-rung' + (done ? ' done' : '') + (open ? '' : ' locked');
+      el.setAttribute('data-node', node.id);
+      el.setAttribute('data-idx', i);
+      if (open || ctx !== 'home') {
+        el.addEventListener('click', function () { goLearnNode(i); });
+      }
+      var fill = done ? '#4caf50' : (open ? node.color : '#e0e0e0');
+      var sym = done ? '✓' : (i === 0 ? '1' : String.fromCharCode(65 + i));
+      el.innerHTML =
+        '<div class="path-icon' + (done ? ' done' : '') + (open ? '' : ' locked') + '" style="background:' + fill + ';">' +
+        '<svg class="ic" style="width:24px;height:24px;fill:' + (done || open ? '#fff' : '#aaa') + ';"><use href="#' + node.icon + '"/></svg>' +
+        (done ? '' : '<div style="position:absolute;bottom:2px;right:2px;font-size:10px;font-weight:900;color:' + (done || open ? '#fff' : '#aaa') + ';">' + sym + '</div>') +
+        '</div>' +
+        '<div class="path-name' + (done ? ' done' : '') + (open ? '' : ' locked') + '">' + node.title + '</div>';
+      container.appendChild(el);
+    });
+    var note = $('#path-note');
+    if (note) note.textContent = pathPercent() + '% of path · ' + pathState.completed.length + ' / ' + PATH.length + ' lessons';
+  }
+
+  function goLearnNode(i) {
+    if (i > pathState.current && pathState.completed.indexOf(PATH[i - 1].id) < 0 && i > 0) {
+      toast('Finish the previous lesson first.');
+      return;
+    }
+    pathState.current = i;
+    savePath();
+    go('learn');
+  }
+
+  /* ──────────────────────────────────────────────────────────── learn ─── */
+  function refreshLearn() {
+    renderPathNodes($('#learn-path-row'), 'learn');
+    var row = $('#learn-train-row');
+    row.innerHTML = '';
+    var skills = [
+      { title: 'Opening Basics', sub: 'Control the center', icon: 'i-sparkle', color: '#4caf50', action: 'open-node-0' },
+      { title: 'Tactics', sub: 'Forks, pins, skewers', icon: 'i-target', color: '#ff9800', action: 'open-node-1' },
+      { title: 'Middlegame', sub: 'Plans and attacks', icon: 'i-bot', color: '#2196f3', action: 'open-node-2' },
+      { title: 'Endgame', sub: 'King and pawn vs king', icon: 'i-flag', color: '#9c27b0', action: 'open-node-3' },
+      { title: 'Mastery', sub: 'Grandmaster level', icon: 'i-trophy', color: '#e91e63', action: 'open-node-4', locked: true },
+    ];
+    skills.forEach(function (s, i) {
+      var open = i <= pathState.current || pathState.completed.indexOf(PATH[i].id) >= 0;
+      if (s.locked && !open) return;
+      var el = document.createElement('button');
+      el.className = 'train-card' + (open ? '' : ' locked');
+      el.style.background = open ? 'rgba(255,255,255,0.92)' : '#e0e0e0';
+      el.style.color = open ? 'var(--text)' : '#aaa';
+      if (!open) el.style.pointerEvents = 'none';
+      el.dataset.action = s.action;
+      el.innerHTML =
+        '<div class="ic" style="width:34px;height:34px;border-radius:10px;background:' + s.color + '22;color:' + s.color + ';display:flex;align-items:center;justify-content:center;margin-bottom:6px;">' +
+        '<svg class="ic" style="width:20px;height:20px;fill:' + s.color + ';"><use href="#' + s.icon + '"/></svg></div>' +
+        '<span class="tc-title" style="color:' + (open ? 'var(--text)' : '#aaa') + ';">' + s.title + '</span>' +
+        '<span class="tc-sub" style="color:' + (open ? 'var(--muted)' : '#ccc') + ';">' + s.sub + '</span>';
+      row.appendChild(el);
+    });
+    renderLearnLessons();
+  }
+
+  function renderLearnLessons() {
+    var wrap = $('#learn-lessons');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    PATH.forEach(function (node, i) {
+      var done = pathState.completed.indexOf(node.id) >= 0;
+      var open = i <= pathState.current || done;
+      var el = document.createElement('button');
+      el.className = 'lesson-card' + (done ? ' done' : '') + (open ? ' current' : '');
+      el.dataset.node = node.id;
+      el.dataset.idx = i;
+      if (open) el.addEventListener('click', function () { completeLesson(i); });
+      var prog = done ? 100 : (i === pathState.current ? 60 : 0);
+      el.innerHTML =
+        '<div class="lesson-num' + (done ? ' done' : '') + (open ? ' current' : '') + '">' + (i + 1) + '</div>' +
+        '<div class="lesson-info">' +
+        '<div class="lesson-title">' + node.title + '</div>' +
+        '<div class="lesson-desc">' + (done ? 'Completed +' + (20 + i * 5) + ' XP' : (open ? 'Tap to start' : 'Locked')) + '</div>' +
+        '<div class="lesson-progress"><div class="lesson-progress-fill" style="width:' + prog + '%"></div></div>' +
+        '</div>' +
+        (open ? '' : '<div class="lesson-lock"><svg class="ic"><use href="#i-lock"/></svg></div>');
+      wrap.appendChild(el);
+    });
+  }
+
+  function completeLesson(i) {
+    var node = PATH[i];
+    if (pathState.completed.indexOf(node.id) >= 0) { toast('Already completed.'); return; }
+    pathState.completed.push(node.id);
+    if (i > pathState.current) pathState.current = i;
+    savePath();
+    awardXp(20 + i * 5);
+    awardGems(10 + i);
+    profile.streak = (profile.streak || 0) + 1;
+    saveProfile();
+    toast('Lesson complete! +' + (20 + i * 5) + ' XP');
+    if ($('#screen-learn').classList.contains('active')) refreshLearn();
+    if ($('#screen-home').classList.contains('active')) refreshHome();
+    if ($('#screen-progress').classList.contains('active')) refreshProgress();
+    if ($('#screen-profile').classList.contains('active')) refreshProfile();
+  }
+
+  /* ──────────────────────────────────────────────────────── progress ─── */
+  function refreshProgress() {
+    renderPathNodes($('#progress-path-row'), 'progress');
+    $('#progress-pct').textContent = pathPercent() + '%';
+    var lv = levelForXp(profile.xp);
+    var curXp = xpProgress(profile.xp);
+    $('#prog-level').textContent = lv;
+    $('#prog-xp-text').textContent = curXp + ' / 500 XP';
+    $('#prog-xp-fill').style.width = (curXp / 500 * 100) + '%';
+    $('#prog-xp-note').textContent = (500 - curXp) + ' XP to level ' + (lv + 1);
+    renderProgressLessons();
+  }
+
+  function renderProgressLessons() {
+    var wrap = $('#progress-lessons');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    PATH.forEach(function (node, i) {
+      var done = pathState.completed.indexOf(node.id) >= 0;
+      var open = i <= pathState.current || done;
+      var el = document.createElement('button');
+      el.className = 'lesson-card' + (done ? ' done' : '') + (open ? ' current' : '') + (!open ? ' locked' : '');
+      el.dataset.node = node.id;
+      if (open) el.addEventListener('click', function () { completeLesson(i); });
+      var prog = done ? 100 : (i === pathState.current ? 60 : 0);
+      el.innerHTML =
+        '<div class="lesson-num' + (done ? ' done' : '') + (open ? ' current' : '') + '">' + (i + 1) + '</div>' +
+        '<div class="lesson-info">' +
+        '<div class="lesson-title">' + node.title + '</div>' +
+        '<div class="lesson-desc">' + (done ? 'Completed' : (open ? 'In progress' : 'Locked')) + '</div>' +
+        '<div class="lesson-progress"><div class="lesson-progress-fill" style="width:' + prog + '%"></div></div>' +
+        '</div>' +
+        (!open ? '<div class="lesson-lock"><svg class="ic"><use href="#i-lock"/></svg></div>' : '');
+      wrap.appendChild(el);
+    });
+  }
+
+  /* ──────────────────────────────────────────────────────── profile ─── */
+  function refreshProfile() {
+    refreshTopBar();
+    var shown = profile.name || 'Player';
+    $('#prof-name').textContent = shown;
+    $('#prof-avatar').textContent = shown.charAt(0).toUpperCase();
+    applyAvatar($('#prof-avatar'));
+    var lv = levelForXp(profile.xp);
+    $('#prof-level').textContent = lv;
+    $('#prof-badge').textContent = 'Lv. ' + lv;
+    $('#prof-tier').textContent = 'Lv. ' + lv + ' · ' + (BOTS ? BOTS.tier(profile.rating).label : 'Casual');
+    $('#prof-rating').textContent = profile.rating;
+    $('#prof-gems').textContent = profile.gems;
+    $('#prof-streak').textContent = profile.streak;
+    var curXp = xpProgress(profile.xp);
+    $('#prof-next-xp').textContent = curXp + ' / 500 XP';
+    $('#prof-xp-fill').style.width = (curXp / 500 * 100) + '%';
+    $('#prof-xp-note').textContent = (500 - curXp) + ' XP to level ' + (lv + 1);
+
+    $('#ov-wins').textContent = stats.w;
+    $('#ov-losses').textContent = stats.l;
+    $('#ov-draws').textContent = stats.d;
+    $('#ov-games').textContent = (stats.w || 0) + (stats.l || 0) + (stats.d || 0);
+
+    renderProfileAch();
+    renderProfileLessons();
+  }
+
+  function renderProfileAch() {
+    var wrap = $('#profile-ach-grid');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    var list = [
+      { id: 'first-win', name: 'First Win', icon: 'i-medal', done: stats.w >= 1 },
+      { id: 'win-10', name: 'Getting Serious', icon: 'i-medal', done: stats.w >= 10 },
+      { id: 'streak-5', name: 'On a Run', icon: 'i-flame', done: profile.streak >= 5 },
+      { id: 'lessons', name: 'Scholar', icon: 'i-book', done: pathState.completed.length >= 1 },
+      { id: 'gems', name: 'Gem Collector', icon: 'i-gem', done: profile.gems >= 50 },
+    ];
+    list.forEach(function (a) {
+      var el = document.createElement('div');
+      el.className = 'ach-badge' + (a.done ? ' done' : ' locked');
+      el.innerHTML =
+        '<div class="ach-icon' + (a.done ? '' : ' locked') + '" style="background:' + (a.done ? '#ffeb3b' : '#e0e0e0') + ';color:' + (a.done ? '#333' : '#aaa') + ';">' +
+        '<svg class="ic" style="width:24px;height:24px;fill:' + (a.done ? '#333' : '#aaa') + ';"><use href="#' + a.icon + '"/></svg></div>' +
+        '<div class="ach-name' + (a.done ? '' : ' locked') + '">' + a.name + '</div>';
+      wrap.appendChild(el);
+    });
+  }
+
+  function renderProfileLessons() {
+    var wrap = $('#profile-lessons');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    var done = pathState.completed.length;
+    var el = document.createElement('div');
+    el.className = 'lesson-card';
+    el.innerHTML =
+      '<div class="lesson-info">' +
+      '<div class="lesson-title">Lessons completed</div>' +
+      '<div class="lesson-desc">' + done + ' / ' + PATH.length + ' · ' + pathPercent() + '% path</div>' +
+      '</div>' +
+      '<div class="lesson-progress"><div class="lesson-progress-fill" style="width:' + pathPercent() + '%"></div></div>';
+    wrap.appendChild(el);
   }
 
   function buildQuickBots() {
     var row = $('#quick-bots');
+    if (!row) return;
     row.innerHTML = '';
     [0, 4, 8, 11, 15, 19].forEach(function (i) {
       var b = BOTS.BOTS[i];
@@ -2134,7 +2406,31 @@
     if (e.target === this) showResult(false);
   });
 
+  /* ── mobile touch fix ──
+   * The click-only delegation below leaves buttons dead on many Android
+   * WebViews (touch does not synthesize a reliable click). We listen for
+   * touchstart/touchend, prevent the default scroll on tappable elements,
+   * and re-dispatch a click so the existing delegation handles it. A flag
+   * suppresses the browser's own ~300ms-delayed click so nothing fires twice.
+   */
+  var _touchTarget = null;
+  var _ignoreClick = false;
+  document.addEventListener('touchstart', function (e) {
+    var t = e.target.closest('[data-go],[data-action]');
+    if (t) { _touchTarget = t; e.preventDefault(); }
+  }, { passive: false });
+  document.addEventListener('touchend', function (e) {
+    if (_touchTarget) {
+      _ignoreClick = true;
+      setTimeout(function () { _ignoreClick = false; }, 400);
+      var ev = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
+      _touchTarget.dispatchEvent(ev);
+      _touchTarget = null;
+    }
+  }, { passive: false });
+
   document.addEventListener('click', function (e) {
+    if (_ignoreClick) return;
     /* ---- move navigation: < > |< >| and tapping a move in the bar ---- */
     var navEl = e.target.closest('[data-nav]');
     if (navEl && !navEl.disabled) {
@@ -2160,6 +2456,14 @@
 
     /* ------------------------------------------------- v1.8 ------- */
     if (a === 'daily')       { openDaily(); return; }
+
+    /* learn path nodes */
+    if (a.indexOf('open-node-') === 0) {
+      var idx = parseInt(a.slice('open-node-'.length), 10);
+      if (!isNaN(idx)) goLearnNode(idx);
+      return;
+    }
+    if (a === 'continue-lesson') { go('learn'); return; }
     if (a === 'ladder-play') {
       var lb = BOTS.byId(act.dataset.bot);
       if (lb) startGame('bot', lb, E.WHITE, settings.tc);
