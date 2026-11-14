@@ -1984,22 +1984,6 @@
     reader.readAsDataURL(file);
   }
 
-  /* ───────────────────────────────────────────────── profile screen ─── */
-  function refreshProfile() {
-    $('#name-input').value = profile.name;
-    $('#name-shown').textContent = profile.name || 'Player';
-    applyAvatar($('#prof-avatar'));
-    $('#btn-av-clear').hidden = !profile.photo;
-    $('#st-w').textContent = stats.w;
-    $('#st-l').textContent = stats.l;
-    $('#st-d').textContent = stats.d;
-    $('#st-best').textContent = stats.best || '–';
-    if ($('#st-gold')) $('#st-gold').textContent = profile.gold;
-    if ($('#st-elo')) $('#st-elo').textContent = profile.rating;
-    if ($('#shop-gold')) $('#shop-gold').textContent = profile.gold;
-    if ($('#shop-elo')) $('#shop-elo').textContent = profile.rating;
-  }
-
   /* ──────────────────────────────────────────────────────────── shop ─── */
   function openShop() {
     var grid = $('#shop-grid'); grid.innerHTML = '';
@@ -2036,33 +2020,39 @@
         grid.appendChild(b);
       });
     });
-    $('#shop-gold').textContent = profile.gold;
-    $('#shop-elo').textContent = profile.rating;
-    go('shop');
+    if ($('#shop-gold')) $('#shop-gold').textContent = profile.gold;
+    if ($('#shop-elo')) $('#shop-elo').textContent = profile.rating;
+    openSheet('#shop-sheet');
   }
 
-  $('#name-input').addEventListener('input', function () {
-    profile.name = this.value.trim();
-    $('#name-shown').textContent = profile.name || 'Player';
-    applyAvatar($('#prof-avatar'));
-    saveProfile();
-  });
+  var nameInput = $('#name-input');
+  if (nameInput) {
+    nameInput.addEventListener('input', function () {
+      profile.name = this.value.trim();
+      $('#name-shown').textContent = profile.name || 'Player';
+      applyAvatar($('#prof-avatar'));
+      saveProfile();
+    });
 
-  /* pencil: reveal the field, hide it again when the user is done */
-  function closeNameEditor() {
-    $('#name-input').hidden = true;
-    $('#name-row').hidden = false;
-    refreshHome();
+    /* pencil: reveal the field, hide it again when the user is done */
+    function closeNameEditor() {
+      nameInput.hidden = true;
+      $('#name-row').hidden = false;
+      refreshHome();
+    }
+    nameInput.addEventListener('blur', closeNameEditor);
+    nameInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+    });
   }
-  $('#name-input').addEventListener('blur', closeNameEditor);
-  $('#name-input').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
-  });
 
-  $('#avatar-file').addEventListener('change', function () {
-    if (this.files && this.files[0]) importAvatar(this.files[0]);
-    this.value = '';                 /* so picking the same file twice fires */
-  });
+  var avatarFile = $('#avatar-file');
+  if (avatarFile) {
+    avatarFile.addEventListener('change', function () {
+      if (this.files && this.files[0]) importAvatar(this.files[0]);
+      this.value = '';                 /* so picking the same file twice fires */
+    });
+  }
 
   /* Avatar colours were replaced by real pictures in 1.7; buildAvatarColors
      is kept as a no-op so older callers and saved profiles stay valid. */
