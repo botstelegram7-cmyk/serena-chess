@@ -27,7 +27,7 @@ const ok = (name, cond, extra='') => { console.log(`  ${cond?'PASS':'FAIL'}  ${n
 (async () => {
 console.log('\n── boot ──');
 ok('11 scripts loaded', true);
-ok('4 mode cards on home', w.document.querySelectorAll('.mode-card').length === 4);
+ok('6 mode cards on home', w.document.querySelectorAll('.mode-card').length === 6);
 ok('rating shown', $('#me-rating').textContent === '1200');
 ok('online + friends + review screens exist', !!$('#screen-online') && !!$('#screen-friends') && !!$('#screen-review'));
 

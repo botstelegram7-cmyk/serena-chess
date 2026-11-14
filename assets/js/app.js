@@ -1468,20 +1468,20 @@
   function refreshHome() {
     refreshTopBar();
 
-    $('#hm-w').textContent = stats.w;
-    $('#hm-l').textContent = stats.l;
-    $('#hm-d').textContent = stats.d;
+    if ($('#hm-w')) $('#hm-w').textContent = stats.w;
+    if ($('#hm-l')) $('#hm-l').textContent = stats.l;
+    if ($('#hm-d')) $('#hm-d').textContent = stats.d;
     var total = (stats.w || 0) + (stats.l || 0) + (stats.d || 0);
     var wr = total ? Math.round((stats.w / total) * 100) : '–';
-    $('#hm-wr').textContent = (wr === '–' ? '–' : wr + '%');
+    if ($('#hm-wr')) $('#hm-wr').textContent = (wr === '–' ? '–' : wr + '%');
 
     var lv = levelForXp(profile.xp);
-    $('#hero-title').textContent = total ? 'Keep going, ' + (profile.name || 'Player') : 'Welcome, ' + (profile.name || 'Player');
-    $('#hero-sub').textContent = 'Level ' + lv + ' · ' + pathPercent() + '% of path';
-    $('#hero-cta').textContent = pathState.completed.length < PATH.length ? 'Continue Lesson' : 'Path complete!';
+    if ($('#hero-title')) $('#hero-title').textContent = total ? 'Keep going, ' + (profile.name || 'Player') : 'Welcome, ' + (profile.name || 'Player');
+    if ($('#hero-sub')) $('#hero-sub').textContent = 'Level ' + lv + ' · ' + pathPercent() + '% of path';
+    if ($('#hero-cta')) $('#hero-cta').textContent = pathState.completed.length < PATH.length ? 'Continue Lesson' : 'Path complete!';
 
-    $('#daily-streak-val').textContent = profile.streak;
-    $('#daily-reward').textContent = '+' + (10 + profile.streak);
+    if ($('#daily-streak-val')) $('#daily-streak-val').textContent = profile.streak;
+    if ($('#daily-reward')) $('#daily-reward').textContent = '+' + (10 + profile.streak);
 
     renderPathNodes($('#path-row'), 'home');
   }
