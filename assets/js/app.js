@@ -1349,7 +1349,7 @@
       list.appendChild(b);
     });
 
-    $('#pgn-box').textContent = RV.pgn(hist, meta);
+    $('#pgn-box').textContent = RV.pgn(hist, meta, res);
     if (hist === G.hist) { renderMoveBar(); paintEvalAt(G.viewPly === null ? hist.length() : G.viewPly); }
   }
 

@@ -355,7 +355,7 @@
   }
 
   /* ═════════════════════════════════════════════════════════════ PGN ═══ */
-  function pgn(history, meta) {
+  function pgn(history, meta, analysis) {
     meta = meta || {};
     var d = meta.date ? new Date(meta.date) : new Date();
     var pad = function (n) { return (n < 10 ? '0' : '') + n; };
@@ -378,11 +378,12 @@
 
     var head = tags.map(function (t) { return '[' + t[0] + ' "' + String(t[1]).replace(/"/g, "'") + '"]'; }).join('\n');
 
+    var moves = (analysis && analysis.moves) || [];
     var body = '', line = '';
     for (var i = 0; i < history.moves.length; i++) {
       var san = history.moves[i].san;
       var nag = '', mark = '';
-      var r = (res.moves || [])[i];
+      var r = moves[i];
       if (r) {
         switch (r.label) {
           case 'brilliant': nag = ' $3'; mark = '!!'; break;
