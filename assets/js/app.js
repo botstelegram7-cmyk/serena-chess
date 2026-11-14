@@ -211,7 +211,10 @@
 
   function openSheet(id) { $('#scrim').hidden = false; $(id).hidden = false; }
   function closeSheets() { $('#scrim').hidden = true; $$('.sheet').forEach(function (s) { s.hidden = true; }); }
-  $('#scrim').addEventListener('click', function () { if (!G.awaitingPromo) closeSheets(); });
+  var scrim = $('#scrim');
+  if (scrim) {
+    scrim.addEventListener('click', function () { if (!G.awaitingPromo) closeSheets(); });
+  }
 
   function confirmDialog(title, text, onYes) {
     $('#confirm-title').textContent = title;
