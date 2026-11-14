@@ -1889,15 +1889,18 @@
     hsRange.addEventListener('change', saveSettings);
   }
 
-  $('#human-sheet').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-side]');
-    if (!b || !pendingHuman) return;
-    var s = b.dataset.side;
-    var color = s === 'w' ? E.WHITE : (s === 'b' ? E.BLACK : (Math.random() < 0.5 ? E.WHITE : E.BLACK));
-    pendingHuman.elo = settings.humanElo;
-    closeSheets();
-    startGame('bot', pendingHuman, color, settings.tc);
-  });
+  var humanSheet = $('#human-sheet');
+  if (humanSheet) {
+    humanSheet.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-side]');
+      if (!b || !pendingHuman) return;
+      var s = b.dataset.side;
+      var color = s === 'w' ? E.WHITE : (s === 'b' ? E.BLACK : (Math.random() < 0.5 ? E.WHITE : E.BLACK));
+      pendingHuman.elo = settings.humanElo;
+      closeSheets();
+      startGame('bot', pendingHuman, color, settings.tc);
+    });
+  }
 
   function paintHintSeg() {
     var cur = settings.hintStyle || 'both';
@@ -1905,22 +1908,28 @@
       b.classList.toggle('sel', b.dataset.hintstyle === cur);
     });
   }
-  $('#seg-hintStyle').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-hintstyle]');
-    if (!b) return;
-    settings.hintStyle = b.dataset.hintstyle;
-    saveSettings(); paintHintSeg();
-  });
-  paintHintSeg();
+  var segHint = $('#seg-hintStyle');
+  if (segHint) {
+    segHint.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-hintstyle]');
+      if (!b) return;
+      settings.hintStyle = b.dataset.hintstyle;
+      saveSettings(); paintHintSeg();
+    });
+    paintHintSeg();
+  }
 
-  $('#bot-sheet').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-side]');
-    if (!b || !pendingBot) return;
-    var s = b.dataset.side;
-    var color = s === 'w' ? E.WHITE : (s === 'b' ? E.BLACK : (Math.random() < 0.5 ? E.WHITE : E.BLACK));
-    closeSheets();
-    startGame('bot', pendingBot, color, settings.tc);
-  });
+  var botSheet = $('#bot-sheet');
+  if (botSheet) {
+    botSheet.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-side]');
+      if (!b || !pendingBot) return;
+      var s = b.dataset.side;
+      var color = s === 'w' ? E.WHITE : (s === 'b' ? E.BLACK : (Math.random() < 0.5 ? E.WHITE : E.BLACK));
+      closeSheets();
+      startGame('bot', pendingBot, color, settings.tc);
+    });
+  }
 
   /* ───────────────────────────────────────────────────────── avatar ───
      One painter for every avatar in the app: the profile, the home corner
