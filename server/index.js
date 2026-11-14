@@ -241,6 +241,7 @@ let stockfishReady = false;
 function stockfishBestMove(fen, color, cb) {
   if (!STOCKFISH_BIN) { return cb(new Error('no_stockfish_bin')); }
   const proc = spawn(STOCKFISH_BIN, []);
+  proc.on('error', () => { cb(new Error('stockfish_missing')); });
   let timedOut = false;
   const timer = setTimeout(() => { timedOut = true; proc.kill(); cb(new Error('timeout')); }, 8000);
 
@@ -620,6 +621,7 @@ try {
   let ready = false;
   const t = setTimeout(() => { test.kill(); stockfishReady = ready; console.log('stockfish unavailable (no readyok)'); }, 1500);
   test.stdout.on('data', (d) => { if (d.toString().includes('readyok')) ready = true; });
+  test.on('error', () => { stockfishReady = false; });
   test.stdin.write('uci\n');
   test.stdin.end();
   test.on('close', () => { clearTimeout(t); if (!ready) stockfishReady = false; });

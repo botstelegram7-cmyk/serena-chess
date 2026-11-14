@@ -1877,14 +1877,17 @@
     openSheet('#human-sheet');
   }
 
-  $('#hs-range').addEventListener('input', function () {
-    var v = parseInt(this.value, 10) || 1200;
-    settings.humanElo = v;
-    if (pendingHuman) pendingHuman.elo = v;
-    paintHumanSheet(v);
-    var tag = $('#hc-elo'); if (tag) tag.textContent = v;
-  });
-  $('#hs-range').addEventListener('change', saveSettings);
+  var hsRange = $('#hs-range');
+  if (hsRange) {
+    hsRange.addEventListener('input', function () {
+      var v = parseInt(this.value, 10) || 1200;
+      settings.humanElo = v;
+      if (pendingHuman) pendingHuman.elo = v;
+      paintHumanSheet(v);
+      var tag = $('#hc-elo'); if (tag) tag.textContent = v;
+    });
+    hsRange.addEventListener('change', saveSettings);
+  }
 
   $('#human-sheet').addEventListener('click', function (e) {
     var b = e.target.closest('[data-side]');
