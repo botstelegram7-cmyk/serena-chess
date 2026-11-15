@@ -2431,8 +2431,10 @@
     if (_touchTarget) {
       _ignoreClick = true;
       setTimeout(function () { _ignoreClick = false; }, 400);
-      var ev = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
-      _touchTarget.dispatchEvent(ev);
+      /* Use HTMLElement.click() instead of dispatchEvent — it is far more
+         reliable on older Android WebViews where synthetic MouseEvents may
+         not trigger button listeners. */
+      _touchTarget.click();
       _touchTarget = null;
     }
   }, { passive: false });
