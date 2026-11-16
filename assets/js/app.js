@@ -2429,13 +2429,17 @@
   }, { passive: false });
   document.addEventListener('touchend', function (e) {
     if (_touchTarget) {
-      /* Use HTMLElement.click() instead of dispatchEvent — it is far more
-         reliable on older Android WebViews where synthetic MouseEvents may
-         not trigger button listeners. Fire the click FIRST while
-         _ignoreClick is still false so the document delegation handler
-         actually runs, then set the flag to suppress the browser's own
-         ~300ms-delayed synthetic click. */
-      _touchTarget.click();
+      /* Directly invoke the action instead of relying on HTMLElement.click(),
+         which is unreliable on some Android WebViews. Falls back to .click()
+         for any action not explicitly handled here. */
+      var go = _touchTarget.dataset.go;
+      var act = _touchTarget.dataset.action;
+      if (go) { go(go); }
+      else if (act === 'continue-lesson') { go('learn'); }
+      else if (act === 'daily') { openDaily(); }
+      else if (act === 'open-online') { openOnline(); }
+      else if (act === 'open-shop') { openShop(); }
+      else { _touchTarget.click(); }
       _ignoreClick = true;
       setTimeout(function () { _ignoreClick = false; }, 400);
       _touchTarget = null;
