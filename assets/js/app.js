@@ -2415,39 +2415,38 @@
   }
 
   /* ── mobile touch fix ──
-   * The click-only delegation below leaves buttons dead on many Android
-   * WebViews (touch does not synthesize a reliable click). We listen for
-   * touchstart/touchend, prevent the default scroll on tappable elements,
-   * and re-dispatch a click so the existing delegation handles it. A flag
-   * suppresses the browser's own ~300ms-delayed click so nothing fires twice.
+   * On some Android WebViews, document-level touchend + .click() is unreliable.
+   * Add direct touchend listeners to every tappable element instead. A flag
+   * suppresses the browser's own ~300ms-delayed synthetic click so nothing
+   * fires twice.
    */
-  var _touchTarget = null;
-  var _ignoreClick = false;
-  document.addEventListener('touchstart', function (e) {
-    var t = e.target.closest('[data-go],[data-action]');
-    if (t) { _touchTarget = t; e.preventDefault(); }
-  }, { passive: false });
-  document.addEventListener('touchend', function (e) {
-    if (_touchTarget) {
-      /* Directly invoke the action instead of relying on HTMLElement.click(),
-         which is unreliable on some Android WebViews. Falls back to .click()
-         for any action not explicitly handled here. */
-      var go = _touchTarget.dataset.go;
-      var act = _touchTarget.dataset.action;
-      if (go) { go(go); }
-      else if (act === 'continue-lesson') { go('learn'); }
-      else if (act === 'daily') { openDaily(); }
-      else if (act === 'open-online') { openOnline(); }
-      else if (act === 'open-shop') { openShop(); }
-      else { _touchTarget.click(); }
-      _ignoreClick = true;
-      setTimeout(function () { _ignoreClick = false; }, 400);
-      _touchTarget = null;
-    }
-  }, { passive: false });
+  var _justTouched = false;
+
+  /* Wire direct touchend listeners on all tappable elements. Called at boot
+     and after dynamic screen content is built. */
+  function wireTouch() {
+    $$('[data-go],[data-action]').forEach(function (el) {
+      if (el._touchWired) return;
+      el._touchWired = true;
+      el.addEventListener('touchend', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        _justTouched = true;
+        setTimeout(function () { _justTouched = false; }, 400);
+        var go = el.dataset.go;
+        var act = el.dataset.action;
+        if (go) { go(go); return; }
+        if (act === 'continue-lesson') { go('learn'); return; }
+        if (act === 'daily') { openDaily(); return; }
+        if (act === 'open-online') { openOnline(); return; }
+        if (act === 'open-shop') { openShop(); return; }
+        el.click();
+      }, { passive: false });
+    });
+  }
 
   document.addEventListener('click', function (e) {
-    if (_ignoreClick) return;
+    if (_justTouched) return;
     /* ---- move navigation: < > |< >| and tapping a move in the bar ---- */
     var navEl = e.target.closest('[data-nav]');
     if (navEl && !navEl.disabled) {
@@ -2818,6 +2817,7 @@
     syncServerWarn();
     setTimeout(refreshAiNudge, 4000);
     document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    wireTouch();
   }
 
   /* __TESTHOOK__ : exposed only so the headless integration test can drive the
