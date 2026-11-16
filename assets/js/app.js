@@ -1479,6 +1479,7 @@
     if ($('#hero-title')) $('#hero-title').textContent = total ? 'Keep going, ' + (profile.name || 'Player') : 'Welcome, ' + (profile.name || 'Player');
     if ($('#hero-sub')) $('#hero-sub').textContent = 'Level ' + lv + ' · ' + pathPercent() + '% of path';
     if ($('#hero-cta')) $('#hero-cta').textContent = pathState.completed.length < PATH.length ? 'Continue Lesson' : 'Path complete!';
+    if ($('#me-rating')) $('#me-rating').textContent = profile.rating;
 
     if ($('#daily-streak-val')) $('#daily-streak-val').textContent = profile.streak;
     if ($('#daily-reward')) $('#daily-reward').textContent = '+' + (10 + profile.streak);
@@ -3223,5 +3224,14 @@
       boot(); stampVersion(); signBuild(); guardCredits(); wireV18(); announceUpdate(); handleShortcut();
     });
   } else { boot(); stampVersion(); signBuild(); guardCredits(); wireV18(); announceUpdate(); handleShortcut(); }
+
+  /* ── expose for inline HTML onclick handlers ──
+     The app is inside an IIFE; inline onclick attributes need globals.
+     Keep these in sync with the handlers written in index.html.       */
+  window.appGo = go;
+  window.appOpenDaily = openDaily;
+  window.appOpenOnline = openOnline;
+  window.appOpenShop = openShop;
+  window.appStartLocal = function () { startGame('local', null, E.WHITE, '10+0'); };
 
 })();
