@@ -40,15 +40,15 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-button, a, [data-go], [data-action], .nav-item, .mode-card, .btn-big, .icon-btn, .link-btn { touch-action: none; }
+button, a, [data-go], [data-action], .nav-item, .mode-card, .btn-big, .icon-btn, .link-btn { touch-action: manipulation; }
 html, body { height: 100%; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Noto Sans', 'Noto Sans CJK';
   background: var(--bg-gradient);
   color: var(--text);
   overflow: hidden;
-  position: fixed;
-  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 /* ── screens ── */
