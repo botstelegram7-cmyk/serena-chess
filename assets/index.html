@@ -83,7 +83,7 @@
         <span class="me-gems"><svg class="ic" style="width:16px;height:16px;fill:#90caf9;"><use href="#i-gem"/></svg><b id="gems-val">120</b></span>
         <span class="me-pro"><svg class="ic" style="width:16px;height:16px;fill:#ffd700;"><use href="#i-crown"/></svg>Pro</span>
       </div>
-      <button class="icon-btn" data-go="settings" aria-label="Settings"><svg class="ic"><use href="#i-gear"/></svg></button>
+      <button class="icon-btn" data-go="settings" aria-label="Settings" ontouchend="appTouch(this)"><svg class="ic"><use href="#i-gear"/></svg></button>
     </div>
 
     <!-- hero (mockup style) -->
@@ -92,12 +92,12 @@
         <span class="hero-tag">Learn · Practice · Improve</span>
         <h1 id="hero-title">Learn Chess<br><span style="font-size:28px;font-weight:900;color:#ffd700;">Step by Step</span></h1>
         <p class="hero-sub" id="hero-sub">Interactive lessons, fun challenges, and win more games</p>
-        <button class="btn-big" id="hero-cta" data-action="continue-lesson">▶ Continue Learning</button>
+        <button class="btn-big" id="hero-cta" data-action="continue-lesson" ontouchend="appTouch(this)">▶ Continue Learning</button>
       </div>
     </div>
 
     <!-- daily goal -->
-    <div class="daily-card" id="daily-card" data-action="daily">
+    <div class="daily-card" id="daily-card" data-action="daily" ontouchend="appTouch(this)">
       <div class="daily-icon"><svg class="ic"><use href="#i-target"/></svg></div>
       <div class="daily-info">
         <div class="daily-title" id="daily-title">Daily Goal</div>
@@ -110,7 +110,7 @@
     <!-- learning path -->
     <div class="section-label row-label">
       <span>Your Learning Path</span>
-      <button class="link-btn" data-go="learn">See All</button>
+      <button class="link-btn" data-go="learn" ontouchend="appTouch(this)">See All</button>
     </div>
     <div class="path-wrap">
       <div class="path-row" id="path-row"></div>
@@ -118,27 +118,27 @@
 
     <!-- mode cards (mockup style) -->
     <div class="mode-grid">
-      <button class="mode-card mc-play-online" data-action="open-online">
+      <button class="mode-card mc-play-online" data-action="open-online" ontouchend="appTouch(this)">
         <span class="mc-ico"><svg class="ic"><use href="#i-globe"/></svg></span>
         <span class="mc-title">Play Online</span>
         <span class="mc-sub">Real Players</span>
       </button>
-      <button class="mode-card mc-play-bots" data-go="bots">
+      <button class="mode-card mc-play-bots" data-go="bots" ontouchend="appTouch(this)">
         <span class="mc-ico"><svg class="ic"><use href="#i-bot"/></svg></span>
         <span class="mc-title">Play Bots</span>
         <span class="mc-sub">Train vs AI</span>
       </button>
-      <button class="mode-card mc-puzzles" data-go="puzzles">
+      <button class="mode-card mc-puzzles" data-go="puzzles" ontouchend="appTouch(this)">
         <span class="mc-ico"><svg class="ic"><use href="#i-puzzle"/></svg></span>
         <span class="mc-title">Puzzles</span>
         <span class="mc-sub">Sharpen Skills</span>
       </button>
-      <button class="mode-card mc-lessons" data-go="learn">
+      <button class="mode-card mc-lessons" data-go="learn" ontouchend="appTouch(this)">
         <span class="mc-ico"><svg class="ic"><use href="#i-learn"/></svg></span>
         <span class="mc-title">Lessons</span>
         <span class="mc-sub">Learn Step by Step</span>
       </button>
-      <button class="mode-card mc-challenges" data-action="open-shop">
+      <button class="mode-card mc-challenges" data-action="open-shop" ontouchend="appTouch(this)">
         <span class="mc-ico"><svg class="ic"><use href="#i-trophy"/></svg></span>
         <span class="mc-title">Challenges</span>
         <span class="mc-sub">Daily & Events</span>
@@ -148,7 +148,7 @@
     <!-- progress -->
     <div class="section-label row-label">
       <span>Progress &amp; Milestones</span>
-      <button class="link-btn" data-go="progress">View Stats</button>
+      <button class="link-btn" data-go="progress" ontouchend="appTouch(this)">View Stats</button>
     </div>
     <div class="xp-card">
       <div class="xp-header"><span>Chess Learner</span><span>Level 4</span></div>
@@ -167,11 +167,11 @@
 
     <div class="home-foot" id="ver-tag">Serena Chess · @TechnicalSerena</div>
     <nav class="bottom-nav">
-      <a class="nav-item active" data-go="home"><svg class="ic"><use href="#i-home"/></svg><span>Home</span></a>
-      <a class="nav-item" data-go="learn"><svg class="ic"><use href="#i-learn"/></svg><span>Learn</span></a>
-      <a class="nav-item" data-go="bots"><svg class="ic"><use href="#i-play"/></svg><span>Play</span></a>
-      <a class="nav-item" data-go="progress"><svg class="ic"><use href="#i-progress"/></svg><span>Progress</span></a>
-      <a class="nav-item" data-go="profile"><svg class="ic"><use href="#i-profile"/></svg><span>Profile</span></a>
+      <a class="nav-item active" data-go="home" ontouchend="appTouch(this)"><svg class="ic"><use href="#i-home"/></svg><span>Home</span></a>
+      <a class="nav-item" data-go="learn" ontouchend="appTouch(this)"><svg class="ic"><use href="#i-learn"/></svg><span>Learn</span></a>
+      <a class="nav-item" data-go="bots" ontouchend="appTouch(this)"><svg class="ic"><use href="#i-play"/></svg><span>Play</span></a>
+      <a class="nav-item" data-go="progress" ontouchend="appTouch(this)"><svg class="ic"><use href="#i-progress"/></svg><span>Progress</span></a>
+      <a class="nav-item" data-go="profile" ontouchend="appTouch(this)"><svg class="ic"><use href="#i-profile"/></svg><span>Profile</span></a>
     </nav>
   </div>
 </section>

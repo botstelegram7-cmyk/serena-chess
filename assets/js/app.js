@@ -2415,35 +2415,28 @@
   }
 
   /* ── mobile touch fix ──
-   * On some Android WebViews, document-level touchend + .click() is unreliable.
-   * Add direct touchend listeners to every tappable element instead. A flag
-   * suppresses the browser's own ~300ms-delayed synthetic click so nothing
-   * fires twice.
+   * Inline ontouchend handlers on HTML elements call appTouch(el) directly —
+   * the most reliable method on Android WebViews where JS-wired listeners
+   * and .click() re-dispatch are unreliable. A flag suppresses the browser's
+   * ~300ms-delayed synthetic click so nothing fires twice.
    */
   var _justTouched = false;
 
-  /* Wire direct touchend listeners on all tappable elements. Called at boot
-     and after dynamic screen content is built. */
-  function wireTouch() {
-    $$('[data-go],[data-action]').forEach(function (el) {
-      if (el._touchWired) return;
-      el._touchWired = true;
-      el.addEventListener('touchend', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        _justTouched = true;
-        setTimeout(function () { _justTouched = false; }, 400);
-        var go = el.dataset.go;
-        var act = el.dataset.action;
-        if (go) { go(go); return; }
-        if (act === 'continue-lesson') { go('learn'); return; }
-        if (act === 'daily') { openDaily(); return; }
-        if (act === 'open-online') { openOnline(); return; }
-        if (act === 'open-shop') { openShop(); return; }
-        el.click();
-      }, { passive: false });
-    });
-  }
+  /* Called from inline ontouchend attributes on tappable elements. */
+  window.appTouch = function (el) {
+    if (!el) return;
+    var e = el; // reference for clarity
+    _justTouched = true;
+    setTimeout(function () { _justTouched = false; }, 400);
+    var go = e.dataset.go;
+    var act = e.dataset.action;
+    if (go) { go(go); return; }
+    if (act === 'continue-lesson') { go('learn'); return; }
+    if (act === 'daily') { openDaily(); return; }
+    if (act === 'open-online') { openOnline(); return; }
+    if (act === 'open-shop') { openShop(); return; }
+    e.click();
+  };
 
   document.addEventListener('click', function (e) {
     if (_justTouched) return;
@@ -2817,7 +2810,6 @@
     syncServerWarn();
     setTimeout(refreshAiNudge, 4000);
     document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-    wireTouch();
   }
 
   /* __TESTHOOK__ : exposed only so the headless integration test can drive the
