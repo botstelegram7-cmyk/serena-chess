@@ -3233,5 +3233,6 @@
   window.appOpenOnline = openOnline;
   window.appOpenShop = openShop;
   window.appStartLocal = function () { startGame('local', null, E.WHITE, '10+0'); };
+  window.appOpenFriends = openFriends;
 
 })();
