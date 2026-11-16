@@ -2414,32 +2414,7 @@
     });
   }
 
-  /* ── mobile touch fix ──
-   * Inline ontouchend handlers on HTML elements call appTouch(el) directly —
-   * the most reliable method on Android WebViews where JS-wired listeners
-   * and .click() re-dispatch are unreliable. A flag suppresses the browser's
-   * ~300ms-delayed synthetic click so nothing fires twice.
-   */
-  var _justTouched = false;
-
-  /* Called from inline ontouchend attributes on tappable elements. */
-  window.appTouch = function (el) {
-    if (!el) return;
-    var e = el; // reference for clarity
-    _justTouched = true;
-    setTimeout(function () { _justTouched = false; }, 400);
-    var go = e.dataset.go;
-    var act = e.dataset.action;
-    if (go) { go(go); return; }
-    if (act === 'continue-lesson') { go('learn'); return; }
-    if (act === 'daily') { openDaily(); return; }
-    if (act === 'open-online') { openOnline(); return; }
-    if (act === 'open-shop') { openShop(); return; }
-    e.click();
-  };
-
   document.addEventListener('click', function (e) {
-    if (_justTouched) return;
     /* ---- move navigation: < > |< >| and tapping a move in the bar ---- */
     var navEl = e.target.closest('[data-nav]');
     if (navEl && !navEl.disabled) {
