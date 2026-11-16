@@ -65,7 +65,7 @@
   <symbol id="i-draw" viewBox="0 0 24 24"><path d="M2 12h20M2 12l4 4M18 12l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </defs></svg>
 
-<!-- ═══════════════════════════════════════════════════════════ HOME ═══ -->
+<!-- ════════════════════════════════════════════════════════════ HOME ═══ -->
 <section class="screen active" id="screen-home">
   <div class="scroll home-scroll">
 
@@ -74,110 +74,87 @@
       <button class="me-id" data-go="profile">
         <span class="avatar avatar-md" id="corner-avatar">P</span>
         <span class="me-text">
-          <span class="me-name" id="me-name">Player</span>
-          <span class="me-sub"><b id="me-rating">1200</b><i id="me-tier">Casual</i></span>
-        <span class="me-gold" id="me-gold">0</span>
+          <span class="me-name" id="me-name">Technical_Serena</span>
+          <span class="me-sub"><b id="me-rating">1578</b><i id="me-tier">Casual</i></span>
         </span>
       </button>
       <div class="me-strip">
-        <span class="me-streak"><svg class="ic" style="width:14px;height:14px;fill:#ffeb3b;"><use href="#i-flame"/></svg><b id="streak-val">0</b></span>
-        <span class="me-gems"><svg class="ic" style="width:14px;height:14px;fill:#ffd54f;"><use href="#i-gem"/></svg><b id="gems-val">0</b></span>
-        <span class="me-pro"><svg class="ic" style="width:14px;height:14px;fill:#ffd54f;"><use href="#i-crown"/></svg>Pro</span>
+        <span class="me-streak"><svg class="ic" style="width:16px;height:16px;fill:#ffeb3b;"><use href="#i-flame"/></svg><b id="streak-val">5</b></span>
+        <span class="me-gems"><svg class="ic" style="width:16px;height:16px;fill:#90caf9;"><use href="#i-gem"/></svg><b id="gems-val">120</b></span>
+        <span class="me-pro"><svg class="ic" style="width:16px;height:16px;fill:#ffd700;"><use href="#i-crown"/></svg>Pro</span>
       </div>
       <button class="icon-btn" data-go="settings" aria-label="Settings"><svg class="ic"><use href="#i-gear"/></svg></button>
     </div>
 
-    <!-- resume -->
-    <button class="resume-card" id="resume-card" data-action="resume" hidden>
-      <span class="rc-left">
-        <span class="rc-kicker">Continue game</span>
-        <span class="rc-title" id="resume-title">vs Bot</span>
-        <span class="rc-sub" id="resume-sub">Move 1</span>
-      </span>
-      <span class="rc-go"><svg class="ic"><use href="#i-play"/></svg></span>
-    </button>
-
-    <!-- primary modes -->
-    <div class="mode-grid">
-      <button class="mode-card mc-bots" data-go="bots">
-        <span class="mc-ico"><svg class="ic"><use href="#i-bot"/></svg></span>
-        <span class="mc-title">Play Bots</span>
-        <span class="mc-sub">60 characters</span>
-      </button>
-      <button class="mode-card mc-online" data-action="open-online">
-        <span class="mc-ico"><svg class="ic"><use href="#i-globe"/></svg></span>
-        <span class="mc-title">Play Online</span>
-        <span class="mc-sub">Random opponent</span>
-      </button>
-      <button class="mode-card mc-friends" data-action="open-friends">
-        <span class="mc-ico"><svg class="ic"><use href="#i-link"/></svg></span>
-        <span class="mc-title">Friends</span>
-        <span class="mc-sub">Invite by code</span>
-      </button>
-      <button class="mode-card mc-local" data-action="play-local">
-        <span class="mc-ico"><svg class="ic"><use href="#i-users"/></svg></span>
-        <span class="mc-title">Pass &amp; Play</span>
-        <span class="mc-sub">Same device</span>
-      </button>
-      <button class="mode-card" data-go="puzzles">
-        <span class="mc-ico"><svg class="ic"><use href="#i-puzzle"/></svg></span>
-        <span class="mc-title">Puzzles</span>
-        <span class="mc-sub">Daily tactic</span>
-      </button>
-      <button class="mode-card" data-go="learn">
-        <span class="mc-ico"><svg class="ic"><use href="#i-learn"/></svg></span>
-        <span class="mc-title">Lessons</span>
-        <span class="mc-sub">Learning path</span>
-      </button>
+    <!-- hero (mockup style) -->
+    <div class="hero" id="hero-card">
+      <div class="hero-body">
+        <span class="hero-tag">Learn · Practice · Improve</span>
+        <h1 id="hero-title">Learn Chess<br><span style="font-size:28px;font-weight:900;color:#ffd700;">Step by Step</span></h1>
+        <p class="hero-sub" id="hero-sub">Interactive lessons, fun challenges, and win more games</p>
+        <button class="btn-big" id="hero-cta" data-action="continue-lesson">▶ Continue Learning</button>
+      </div>
     </div>
 
-    <!-- shop -->
-    <div class="section-label row-label">
-      <span>Shop</span>
-      <button class="link-btn" data-action="open-shop">Browse</button>
+    <!-- daily goal -->
+    <div class="daily-card" id="daily-card" data-action="daily">
+      <div class="daily-icon"><svg class="ic"><use href="#i-target"/></svg></div>
+      <div class="daily-info">
+        <div class="daily-title" id="daily-title">Daily Goal</div>
+        <div class="daily-desc" id="daily-desc">Complete 2 lessons</div>
+        <div class="daily-streak" id="daily-streak">5 Days Current Streak</div>
+      </div>
+      <div class="daily-progress-text" style="font-size:13px;font-weight:700;color:#666;">1 / 2</div>
     </div>
-    <button class="train-card" data-action="open-shop">
-      <svg class="ic ic-lg"><use href="#i-trophy"/></svg>
-      <span class="tc-title">Shop</span>
-      <span class="tc-sub" id="shop-sub">Spend gold</span>
-    </button>
-
-    <!-- train -->
-    <div class="section-label">Train</div>
-    <div class="train-row">
-      <button class="train-card" data-go="puzzles">
-        <svg class="ic ic-lg"><use href="#i-puzzle"/></svg>
-        <span class="tc-title">Puzzles</span>
-        <span class="tc-sub" id="puz-sub">140 tactics</span>
-      </button>
-      <button class="train-card" data-go="practice">
-        <svg class="ic ic-lg"><use href="#i-target"/></svg>
-        <span class="tc-title">Practice</span>
-        <span class="tc-sub">12 endgames</span>
-      </button>
-      <button class="train-card" data-action="open-archive">
-        <svg class="ic ic-lg"><use href="#i-chart"/></svg>
-        <span class="tc-title">My Games</span>
-        <span class="tc-sub" id="arch-sub">Review</span>
-      </button>
-    </div>
-
-    <!-- quick match -->
-    <div class="section-label row-label">
-      <span>Quick match</span>
-      <button class="link-btn" data-go="bots">See all</button>
-    </div>
-    <div class="quick-row" id="quick-bots"></div>
 
     <!-- learning path -->
     <div class="section-label row-label">
-      <span>Learning Path</span>
-      <button class="link-btn" data-go="learn">See all</button>
+      <span>Your Learning Path</span>
+      <button class="link-btn" data-go="learn">See All</button>
     </div>
     <div class="path-wrap">
       <div class="path-row" id="path-row"></div>
     </div>
-    <div class="hint-line" id="path-note">0% of path · 0 / 5 lessons</div>
+
+    <!-- mode cards (mockup style) -->
+    <div class="mode-grid">
+      <button class="mode-card mc-play-online" data-action="open-online">
+        <span class="mc-ico"><svg class="ic"><use href="#i-globe"/></svg></span>
+        <span class="mc-title">Play Online</span>
+        <span class="mc-sub">Real Players</span>
+      </button>
+      <button class="mode-card mc-play-bots" data-go="bots">
+        <span class="mc-ico"><svg class="ic"><use href="#i-bot"/></svg></span>
+        <span class="mc-title">Play Bots</span>
+        <span class="mc-sub">Train vs AI</span>
+      </button>
+      <button class="mode-card mc-puzzles" data-go="puzzles">
+        <span class="mc-ico"><svg class="ic"><use href="#i-puzzle"/></svg></span>
+        <span class="mc-title">Puzzles</span>
+        <span class="mc-sub">Sharpen Skills</span>
+      </button>
+      <button class="mode-card mc-lessons" data-go="learn">
+        <span class="mc-ico"><svg class="ic"><use href="#i-learn"/></svg></span>
+        <span class="mc-title">Lessons</span>
+        <span class="mc-sub">Learn Step by Step</span>
+      </button>
+      <button class="mode-card mc-challenges" data-action="open-shop">
+        <span class="mc-ico"><svg class="ic"><use href="#i-trophy"/></svg></span>
+        <span class="mc-title">Challenges</span>
+        <span class="mc-sub">Daily & Events</span>
+      </button>
+    </div>
+
+    <!-- progress -->
+    <div class="section-label row-label">
+      <span>Progress &amp; Milestones</span>
+      <button class="link-btn" data-go="progress">View Stats</button>
+    </div>
+    <div class="xp-card">
+      <div class="xp-header"><span>Chess Learner</span><span>Level 4</span></div>
+      <div class="xp-bar"><div class="xp-fill" id="prog-xp-fill" style="width:80%"></div></div>
+      <div class="xp-note" id="prog-xp-note">640 / 800 XP</div>
+    </div>
 
     <!-- record -->
     <div class="section-label">Your record</div>
