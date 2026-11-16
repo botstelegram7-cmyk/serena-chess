@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0 — 2026-11-16
+
+### Old UI Restored + Touch Fixed
+
+- Restored original dark navy UI (Duolingo theme removed)
+- 6 mode cards: Play Bots, Play Online, Friends, Pass & Play, Puzzles, Lessons
+- Touch fixed: ontouchend on all tappable elements, overflow: hidden removed from body
+- Stockfish at max strength: The Professor depth 14, timeMs 5000, blunder 0
+
 ## 1.9.3 — 2026-11-01
 
 ### Hybrid Stockfish engine (cloud + offline fallback)

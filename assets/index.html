@@ -57,7 +57,7 @@
 
     <!-- identity -->
     <div class="me-bar">
-      <button class="me-id" data-go="profile">
+      <button class="me-id" data-go="profile" ontouchend="">
         <span class="avatar avatar-md" id="corner-avatar">P</span>
         <span class="me-text">
           <span class="me-name" id="me-name">Player</span>
@@ -65,11 +65,11 @@
         <span class="me-gold" id="me-gold">0</span>
         </span>
       </button>
-      <button class="icon-btn" data-go="settings" aria-label="Settings"><svg class="ic"><use href="#i-gear"/></svg></button>
+      <button class="icon-btn" data-go="settings" aria-label="Settings" ontouchend=""><svg class="ic"><use href="#i-gear"/></svg></button>
     </div>
 
     <!-- resume -->
-    <button class="resume-card" id="resume-card" data-action="resume" hidden>
+    <button class="resume-card" id="resume-card" data-action="resume" hidden ontouchend="">
       <span class="rc-left">
         <span class="rc-kicker">Continue game</span>
         <span class="rc-title" id="resume-title">vs Bot</span>
@@ -80,32 +80,32 @@
 
     <!-- primary modes -->
     <div class="mode-grid">
-      <button class="mode-card mc-bots" data-go="bots" onclick="appGo('bots')">
+      <button class="mode-card mc-bots" data-go="bots" onclick="appGo('bots')" ontouchend="">
         <span class="mc-ico"><svg class="ic"><use href="#i-bot"/></svg></span>
         <span class="mc-title">Play Bots</span>
         <span class="mc-sub">32 characters</span>
       </button>
-      <button class="mode-card mc-online" data-action="open-online" onclick="appOpenOnline()">
+      <button class="mode-card mc-online" data-action="open-online" onclick="appOpenOnline()" ontouchend="">
         <span class="mc-ico"><svg class="ic"><use href="#i-globe"/></svg></span>
         <span class="mc-title">Play Online</span>
         <span class="mc-sub">Random opponent</span>
       </button>
-      <button class="mode-card mc-friends" data-action="open-friends" onclick="appOpenFriends()">
+      <button class="mode-card mc-friends" data-action="open-friends" onclick="appOpenFriends()" ontouchend="">
         <span class="mc-ico"><svg class="ic"><use href="#i-link"/></svg></span>
         <span class="mc-title">Friends</span>
         <span class="mc-sub">Invite by code</span>
       </button>
-      <button class="mode-card mc-local" data-action="play-local" onclick="appStartLocal()">
+      <button class="mode-card mc-local" data-action="play-local" onclick="appStartLocal()" ontouchend="">
         <span class="mc-ico"><svg class="ic"><use href="#i-users"/></svg></span>
         <span class="mc-title">Pass &amp; Play</span>
         <span class="mc-sub">Same device</span>
       </button>
-      <button class="mode-card mc-puzzles" data-go="puzzles" onclick="appGo('puzzles')">
+      <button class="mode-card mc-puzzles" data-go="puzzles" onclick="appGo('puzzles')" ontouchend="">
         <span class="mc-ico"><svg class="ic"><use href="#i-puzzle"/></svg></span>
         <span class="mc-title">Puzzles</span>
         <span class="mc-sub">Daily tactic</span>
       </button>
-      <button class="mode-card mc-lessons" data-go="learn" onclick="appGo('learn')">
+      <button class="mode-card mc-lessons" data-go="learn" onclick="appGo('learn')" ontouchend="">
         <span class="mc-ico"><svg class="ic"><use href="#i-learn"/></svg></span>
         <span class="mc-title">Lessons</span>
         <span class="mc-sub">Learn step by step</span>
@@ -115,9 +115,9 @@
     <!-- shop -->
     <div class="section-label row-label">
       <span>Shop</span>
-      <button class="link-btn" data-action="open-shop">Browse</button>
+      <button class="link-btn" data-action="open-shop" ontouchend="">Browse</button>
     </div>
-    <button class="train-card" data-action="open-shop">
+    <button class="train-card" data-action="open-shop" ontouchend="">
       <svg class="ic ic-lg"><use href="#i-trophy"/></svg>
       <span class="tc-title">Shop</span>
       <span class="tc-sub" id="shop-sub">Spend gold</span>
@@ -126,17 +126,17 @@
     <!-- train -->
     <div class="section-label">Train</div>
     <div class="train-row">
-      <button class="train-card" data-go="puzzles">
+      <button class="train-card" data-go="puzzles" ontouchend="">
         <svg class="ic ic-lg"><use href="#i-puzzle"/></svg>
         <span class="tc-title">Puzzles</span>
         <span class="tc-sub" id="puz-sub">140 tactics</span>
       </button>
-      <button class="train-card" data-go="practice">
+      <button class="train-card" data-go="practice" ontouchend="">
         <svg class="ic ic-lg"><use href="#i-target"/></svg>
         <span class="tc-title">Practice</span>
         <span class="tc-sub">12 endgames</span>
       </button>
-      <button class="train-card" data-action="open-archive">
+      <button class="train-card" data-action="open-archive" ontouchend="">
         <svg class="ic ic-lg"><use href="#i-chart"/></svg>
         <span class="tc-title">My Games</span>
         <span class="tc-sub" id="arch-sub">Review</span>
@@ -146,7 +146,7 @@
     <!-- quick match -->
     <div class="section-label row-label">
       <span>Quick match</span>
-      <button class="link-btn" data-go="bots">See all</button>
+      <button class="link-btn" data-go="bots" ontouchend="">See all</button>
     </div>
     <div class="quick-row" id="quick-bots"></div>
 
@@ -159,14 +159,14 @@
       <div class="stat"><div class="stat-val" id="hm-b">–</div><div class="stat-key">Best win</div></div>
     </div>
 
-    <div class="home-foot" id="ver-tag">Serena Chess · v1.9.3</div>
+    <div class="home-foot" id="ver-tag">Serena Chess · v3.0</div>
   </div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════ BOT GRID ═══ -->
 <section class="screen" id="screen-bots">
   <header class="app-bar">
-    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="home" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Choose an Opponent</div>
     <div class="icon-btn ghost"></div>
   </header>
@@ -176,28 +176,28 @@
 <!-- ════════════════════════════════════════════════════ PROFILE ═══ -->
 <section class="screen" id="screen-profile">
   <header class="app-bar">
-    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="home" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Your Profile</div>
     <div class="icon-btn ghost"></div>
   </header>
   <div class="scroll">
     <div class="center-avatar">
       <button class="avatar avatar-xl" type="button" id="prof-avatar"
-              data-action="pick-avatar" aria-label="Change your picture">P</button>
-      <button class="avatar-cam" type="button" data-action="pick-avatar" aria-label="Change your picture">
+              data-action="pick-avatar" aria-label="Change your picture" ontouchend="">P</button>
+      <button class="avatar-cam" type="button" data-action="pick-avatar" aria-label="Change your picture" ontouchend="">
         <svg class="ic"><use href="#i-camera"/></svg>
       </button>
     </div>
     <input type="file" id="avatar-file" accept="image/*" hidden>
     <div class="av-actions">
-      <button class="btn btn-ghost" data-action="pick-avatar">Choose picture</button>
-      <button class="btn btn-ghost danger" id="btn-av-clear" data-action="clear-avatar" hidden>Remove picture</button>
+      <button class="btn btn-ghost" data-action="pick-avatar" ontouchend="">Choose picture</button>
+      <button class="btn btn-ghost danger" id="btn-av-clear" data-action="clear-avatar" hidden ontouchend="">Remove picture</button>
     </div>
 
     <label class="field-label">Display name</label>
     <div class="name-row" id="name-row">
       <div class="name-shown" id="name-shown">Player</div>
-      <button class="icon-btn" type="button" data-action="edit-name" aria-label="Edit your name">
+      <button class="icon-btn" type="button" data-action="edit-name" aria-label="Edit your name" ontouchend="">
         <svg class="ic"><use href="#i-pencil"/></svg>
       </button>
     </div>
@@ -211,13 +211,13 @@
       <div class="stat"><div class="stat-val" id="st-gold">0</div><div class="stat-key">Gold</div></div>
       <div class="stat"><div class="stat-val" id="st-elo">1200</div><div class="stat-key">Elo</div></div>
     </div>
-    <button class="btn btn-ghost danger" data-action="reset-stats">Reset statistics</button>
+    <button class="btn btn-ghost danger" data-action="reset-stats" ontouchend="">Reset statistics</button>
   </div>
 </section>
 
 <section class="screen" id="screen-whatsnew">
   <header class="app-bar">
-    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="settings" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">What&rsquo;s new</div>
     <div class="icon-btn ghost"></div>
   </header>
@@ -227,7 +227,7 @@
 <!-- ═══════════════════════════════════════════════════ PROGRESS ═══ -->
 <section class="screen" id="screen-progress">
   <header class="app-bar">
-    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="settings" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Your progress</div>
     <div class="icon-btn ghost"></div>
   </header>
@@ -237,7 +237,7 @@
 <!-- ═════════════════════════════════════════════════════ LADDER ═══ -->
 <section class="screen" id="screen-ladder">
   <header class="app-bar">
-    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="settings" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">The climb</div>
     <div class="icon-btn ghost"></div>
   </header>
@@ -247,7 +247,7 @@
 <!-- ════════════════════════════════════════════ ACCOUNT & BACKUP ═══ -->
 <section class="screen" id="screen-account">
   <header class="app-bar">
-    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="settings" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Account &amp; backup</div>
     <div class="icon-btn ghost"></div>
   </header>
@@ -259,7 +259,7 @@
 <!-- ═══════════════════════════════════════════════════ SETTINGS ═══ -->
 <section class="screen" id="screen-settings">
   <header class="app-bar">
-    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="home" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Themes &amp; Settings</div>
     <div class="icon-btn ghost"></div>
   </header>
@@ -269,22 +269,22 @@
 
     <div class="section-label">Custom</div>
     <div class="row-list">
-      <button class="nav-row" data-go="pick-board">
+      <button class="nav-row" data-go="pick-board" ontouchend="">
         <span class="nav-label">Board</span>
         <span class="nav-value" id="v-board">Green</span>
         <svg class="ic chev-ic"><use href="#i-next"/></svg>
       </button>
-      <button class="nav-row" data-go="pick-pieces">
+      <button class="nav-row" data-go="pick-pieces" ontouchend="">
         <span class="nav-label">Pieces</span>
         <span class="nav-value" id="v-piece">Classic</span>
         <svg class="ic chev-ic"><use href="#i-next"/></svg>
       </button>
-      <button class="nav-row" data-go="pick-bg">
+      <button class="nav-row" data-go="pick-bg" ontouchend="">
         <span class="nav-label">Background</span>
         <span class="nav-value" id="v-bg">Classic</span>
         <svg class="ic chev-ic"><use href="#i-next"/></svg>
       </button>
-      <button class="nav-row" data-go="pick-sound">
+      <button class="nav-row" data-go="pick-sound" ontouchend="">
         <span class="nav-label">Sound</span>
         <span class="nav-value" id="v-sound">Default</span>
         <svg class="ic chev-ic"><use href="#i-next"/></svg>
@@ -353,16 +353,16 @@
       </a>
     </div>
 
-    <button class="btn btn-ghost row-btn" data-go="progress">
+    <button class="btn btn-ghost row-btn" data-go="progress" ontouchend="">
       <svg class="ic"><use href="#i-chart"/></svg><span>Your progress</span>
     </button>
-    <button class="btn btn-ghost row-btn" data-go="ladder">
+    <button class="btn btn-ghost row-btn" data-go="ladder" ontouchend="">
       <svg class="ic"><use href="#i-ladder"/></svg><span>The climb</span>
     </button>
-    <button class="btn btn-ghost row-btn" data-go="account">
+    <button class="btn btn-ghost row-btn" data-go="account" ontouchend="">
       <svg class="ic"><use href="#i-cloud"/></svg><span>Account &amp; backup</span>
     </button>
-    <button class="btn btn-ghost row-btn" data-go="whatsnew">
+    <button class="btn btn-ghost row-btn" data-go="whatsnew" ontouchend="">
       <svg class="ic"><use href="#i-sparkle"/></svg><span>What&rsquo;s new</span>
     </button>
 
@@ -377,7 +377,7 @@
 <!-- ════════════════════════════════════════════ THEME  PICKERS ═══ -->
 <section class="screen" id="screen-pick-board">
   <header class="app-bar">
-    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="settings" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Board Style</div><div class="icon-btn ghost"></div>
   </header>
   <div class="scroll"><div class="theme-grid" id="board-grid"></div></div>
@@ -385,7 +385,7 @@
 
 <section class="screen" id="screen-pick-pieces">
   <header class="app-bar">
-    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="settings" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Piece Set</div><div class="icon-btn ghost"></div>
   </header>
   <div class="scroll"><div class="piece-grid" id="piece-grid"></div></div>
@@ -393,7 +393,7 @@
 
 <section class="screen" id="screen-pick-bg">
   <header class="app-bar">
-    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="settings" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Background</div><div class="icon-btn ghost"></div>
   </header>
   <div class="scroll"><div class="theme-grid" id="bg-grid"></div></div>
@@ -401,7 +401,7 @@
 
 <section class="screen" id="screen-pick-sound">
   <header class="app-bar">
-    <button class="icon-btn" data-go="settings"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="settings" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Sound Theme</div><div class="icon-btn ghost"></div>
   </header>
   <div class="scroll">
@@ -414,9 +414,9 @@
 <!-- ════════════════════════════════════════════════════ PUZZLES ═══ -->
 <section class="screen" id="screen-puzzles">
   <header class="app-bar">
-    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="home" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Puzzles</div>
-    <button class="icon-btn" data-action="puzzle-skip" aria-label="Next"><svg class="ic"><use href="#i-next"/></svg></button>
+    <button class="icon-btn" data-action="puzzle-skip" aria-label="Next" ontouchend=""><svg class="ic"><use href="#i-next"/></svg></button>
   </header>
   <div class="game-wrap">
     <div class="play-area">
@@ -438,10 +438,10 @@
       <span id="puz-solved">Solved 0</span>
     </div>
     <div class="game-bar">
-      <button class="gb" data-action="puzzle-hint"><svg class="ic"><use href="#i-bulb"/></svg>Hint</button>
-      <button class="gb" data-action="puzzle-solution"><svg class="ic"><use href="#i-target"/></svg>Solution</button>
-      <button class="gb" data-action="puzzle-retry"><svg class="ic"><use href="#i-undo"/></svg>Retry</button>
-      <button class="gb" data-action="puzzle-skip"><svg class="ic"><use href="#i-next"/></svg>Next</button>
+      <button class="gb" data-action="puzzle-hint" ontouchend=""><svg class="ic"><use href="#i-bulb"/></svg>Hint</button>
+      <button class="gb" data-action="puzzle-solution" ontouchend=""><svg class="ic"><use href="#i-target"/></svg>Solution</button>
+      <button class="gb" data-action="puzzle-retry" ontouchend=""><svg class="ic"><use href="#i-undo"/></svg>Retry</button>
+      <button class="gb" data-action="puzzle-skip" ontouchend=""><svg class="ic"><use href="#i-next"/></svg>Next</button>
     </div>
   </div>
 </section>
@@ -449,7 +449,7 @@
 <!-- ═══════════════════════════════════════════════════ PRACTICE ═══ -->
 <section class="screen" id="screen-practice">
   <header class="app-bar">
-    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="home" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Practice</div>
     <div class="icon-btn ghost"></div>
   </header>
@@ -463,7 +463,7 @@
 
 <section class="screen" id="screen-shop">
   <header class="app-bar">
-    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="home" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Shop</div>
     <div class="shop-pill">
       <span class="shop-gold"><svg class="ic" style="width:14px;height:14px"><use href="#i-trophy"/></svg><b id="shop-gold">0</b> gold</span>
@@ -479,9 +479,9 @@
 <!-- ════════════════════════════════════════════════════════ GAME ═══ -->
 <section class="screen" id="screen-game">
   <header class="app-bar">
-    <button class="icon-btn" data-action="leave-game"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-action="leave-game" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title" id="game-title">Game</div>
-    <button class="icon-btn" data-action="flip"><svg class="ic"><use href="#i-flip"/></svg></button>
+    <button class="icon-btn" data-action="flip" ontouchend=""><svg class="ic"><use href="#i-flip"/></svg></button>
   </header>
 
   <div class="game-wrap">
@@ -506,17 +506,17 @@
         <svg class="arrow-layer" id="arrow-layer" viewBox="0 0 100 100" preserveAspectRatio="none" hidden></svg>
         <div class="board-overlay" id="board-overlay" hidden>
           <div class="overlay-card">
-            <button class="ov-close" data-action="hide-result" aria-label="Close">
+            <button class="ov-close" data-action="hide-result" aria-label="Close" ontouchend="">
               <svg class="ic"><use href="#i-x"/></svg>
             </button>
             <div class="overlay-icon" id="ov-icon">♚</div>
             <div class="overlay-title" id="ov-title">Game over</div>
             <div class="overlay-sub" id="ov-sub"></div>
             <div class="overlay-actions">
-              <button class="btn btn-primary" data-action="rematch">Rematch</button>
-              <button class="btn btn-accent" data-action="review">Game Review</button>
-              <button class="btn btn-ghost" data-action="hide-result">Look at the board</button>
-              <button class="btn btn-ghost" data-action="leave-game">Exit</button>
+              <button class="btn btn-primary" data-action="rematch" ontouchend="">Rematch</button>
+              <button class="btn btn-accent" data-action="review" ontouchend="">Game Review</button>
+              <button class="btn btn-ghost" data-action="hide-result" ontouchend="">Look at the board</button>
+              <button class="btn btn-ghost" data-action="leave-game" ontouchend="">Exit</button>
             </div>
           </div>
         </div>
@@ -541,8 +541,8 @@
     <div class="result-strip" id="result-strip" hidden>
       <span class="rs-icon" id="rs-icon">♚</span>
       <span class="rs-text" id="rs-text">Game over</span>
-      <button class="rs-btn" data-action="review">Review</button>
-      <button class="rs-btn rs-ghost" data-action="show-result">Result</button>
+      <button class="rs-btn" data-action="review" ontouchend="">Review</button>
+      <button class="rs-btn rs-ghost" data-action="show-result" ontouchend="">Result</button>
     </div>
 
     <div class="browse-pill" id="browse-pill" hidden>
@@ -560,12 +560,12 @@
     </div>
 
     <div class="game-bar">
-      <button class="gb" data-action="takeback"><svg class="ic"><use href="#i-undo"/></svg>Undo</button>
-      <button class="gb" data-action="hint"><svg class="ic"><use href="#i-bulb"/></svg>Hint</button>
-      <button class="gb" data-action="chat"><svg class="ic"><use href="#i-chat"/></svg>Chat<span class="gb-dot" id="chat-dot" hidden></span></button>
-      <button class="gb" data-action="resign"><svg class="ic"><use href="#i-flag"/></svg>Resign</button>
-      <button class="gb" data-action="draw" hidden><svg class="ic"><use href="#i-users"/></svg>Draw</button>
-      <button class="gb" data-action="newgame"><svg class="ic"><use href="#i-plus"/></svg>New</button>
+      <button class="gb" data-action="takeback" ontouchend=""><svg class="ic"><use href="#i-undo"/></svg>Undo</button>
+      <button class="gb" data-action="hint" ontouchend=""><svg class="ic"><use href="#i-bulb"/></svg>Hint</button>
+      <button class="gb" data-action="chat" ontouchend=""><svg class="ic"><use href="#i-chat"/></svg>Chat<span class="gb-dot" id="chat-dot" hidden></span></button>
+      <button class="gb" data-action="resign" ontouchend=""><svg class="ic"><use href="#i-flag"/></svg>Resign</button>
+      <button class="gb" data-action="draw" hidden ontouchend=""><svg class="ic"><use href="#i-users"/></svg>Draw</button>
+      <button class="gb" data-action="newgame" ontouchend=""><svg class="ic"><use href="#i-plus"/></svg>New</button>
     </div>
   </div>
 </section>
@@ -574,7 +574,7 @@
 
 <section class="screen" id="screen-online">
   <header class="app-bar">
-    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="home" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Play Online</div>
     <span class="conn-dot" id="conn-dot" data-state="idle" title="Connection"></span>
   </header>
@@ -587,7 +587,7 @@
         <p>Online play needs a relay server. The code for one ships with this app
            in <code>/server</code> &mdash; deploy it free on Render, then paste the
            address below. Everything else works offline.</p>
-        <button class="btn btn-ghost btn-sm" data-go="settings">Open Settings</button>
+        <button class="btn btn-ghost btn-sm" data-go="settings" ontouchend="">Open Settings</button>
       </div>
     </div>
 
@@ -596,7 +596,7 @@
     <div class="section-label">Time control</div>
     <div class="tc-wrap" id="online-tc"></div>
 
-    <button class="btn btn-primary btn-wide" id="btn-find" data-action="find-game">
+    <button class="btn btn-primary btn-wide" id="btn-find" data-action="find-game" ontouchend="">
       <svg class="ic"><use href="#i-search"/></svg> Find Opponent
     </button>
 
@@ -604,7 +604,7 @@
       <div class="spin"></div>
       <div class="s-title">Searching for an opponent…</div>
       <div class="s-sub" id="search-sub">0:00 elapsed</div>
-      <button class="btn btn-ghost btn-sm" data-action="cancel-search">Cancel</button>
+      <button class="btn btn-ghost btn-sm" data-action="cancel-search" ontouchend="">Cancel</button>
     </div>
 
     <div class="section-label">How it works</div>
@@ -618,7 +618,7 @@
 
 <section class="screen" id="screen-friends">
   <header class="app-bar">
-    <button class="icon-btn" data-go="home"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-go="home" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Play with Friends</div>
     <span class="conn-dot" id="conn-dot-2" data-state="idle"></span>
   </header>
@@ -630,7 +630,7 @@
         <b>No server set</b>
         <p>Friend games need a relay server. Deploy the one in <code>/server</code>
            and paste its address in Settings &rarr; Online.</p>
-        <button class="btn btn-ghost btn-sm" data-go="settings">Open Settings</button>
+        <button class="btn btn-ghost btn-sm" data-go="settings" ontouchend="">Open Settings</button>
       </div>
     </div>
 
@@ -643,7 +643,7 @@
     <div class="fpane" id="fpane-host">
       <div class="section-label">Time control</div>
       <div class="tc-wrap" id="friend-tc"></div>
-      <button class="btn btn-primary btn-wide" data-action="create-room">
+      <button class="btn btn-primary btn-wide" data-action="create-room" ontouchend="">
         <svg class="ic"><use href="#i-link"/></svg> Create Invite
       </button>
 
@@ -651,11 +651,11 @@
         <div class="inv-kicker">Your invite code</div>
         <div class="inv-code" id="inv-code">––––––</div>
         <div class="inv-row">
-          <button class="btn btn-ghost btn-sm" data-action="copy-code"><svg class="ic"><use href="#i-copy"/></svg> Copy</button>
-          <button class="btn btn-ghost btn-sm" data-action="share-code"><svg class="ic"><use href="#i-share"/></svg> Share</button>
+          <button class="btn btn-ghost btn-sm" data-action="copy-code" ontouchend=""><svg class="ic"><use href="#i-copy"/></svg> Copy</button>
+          <button class="btn btn-ghost btn-sm" data-action="share-code" ontouchend=""><svg class="ic"><use href="#i-share"/></svg> Share</button>
         </div>
         <div class="inv-wait"><div class="spin spin-sm"></div> Waiting for your friend to join…</div>
-        <button class="btn btn-ghost btn-sm" data-action="cancel-room">Cancel</button>
+        <button class="btn btn-ghost btn-sm" data-action="cancel-room" ontouchend="">Cancel</button>
       </div>
     </div>
 
@@ -664,7 +664,7 @@
       <div class="section-label">Enter your friend’s code</div>
       <input class="code-input" id="join-code" maxlength="7" autocomplete="off"
              autocapitalize="characters" spellcheck="false" placeholder="ABC-123" inputmode="text">
-      <button class="btn btn-primary btn-wide" data-action="join-room">
+      <button class="btn btn-primary btn-wide" data-action="join-room" ontouchend="">
         <svg class="ic"><use href="#i-key"/></svg> Join Game
       </button>
       <p class="note">Codes are six characters and are not case sensitive.
@@ -677,9 +677,9 @@
 
 <section class="screen" id="screen-review">
   <header class="app-bar">
-    <button class="icon-btn" data-action="close-review"><svg class="ic"><use href="#i-back"/></svg></button>
+    <button class="icon-btn" data-action="close-review" ontouchend=""><svg class="ic"><use href="#i-back"/></svg></button>
     <div class="app-title">Game Review</div>
-    <button class="icon-btn" data-action="share-pgn" aria-label="Export PGN"><svg class="ic"><use href="#i-share"/></svg></button>
+    <button class="icon-btn" data-action="share-pgn" aria-label="Export PGN" ontouchend=""><svg class="ic"><use href="#i-share"/></svg></button>
   </header>
   <div class="scroll">
     <div class="analysing" id="analysing">
@@ -713,7 +713,7 @@
 
       <div class="section-label">PGN</div>
       <pre class="pgn-box" id="pgn-box"></pre>
-      <button class="btn btn-ghost btn-wide" data-action="copy-pgn"><svg class="ic"><use href="#i-copy"/></svg> Copy PGN</button>
+      <button class="btn btn-ghost btn-wide" data-action="copy-pgn" ontouchend=""><svg class="ic"><use href="#i-copy"/></svg> Copy PGN</button>
     </div>
   </div>
 </section>
@@ -726,7 +726,7 @@
   <div class="sheet-body">
     <div class="sheet-title">My Games</div>
     <div class="arch-list" id="arch-list"></div>
-    <button class="btn btn-ghost btn-wide" data-action="clear-archive">Clear history</button>
+    <button class="btn btn-ghost btn-wide" data-action="clear-archive" ontouchend="">Clear history</button>
   </div>
 </div>
 
@@ -737,8 +737,8 @@
     <div class="sheet-title">Draw offer</div>
     <p class="note" id="draw-text">Your opponent offers a draw.</p>
     <div class="row-2">
-      <button class="btn btn-primary" data-action="draw-accept">Accept</button>
-      <button class="btn btn-ghost" data-action="draw-decline">Decline</button>
+      <button class="btn btn-primary" data-action="draw-accept" ontouchend="">Accept</button>
+      <button class="btn btn-ghost" data-action="draw-decline" ontouchend="">Decline</button>
     </div>
   </div>
 </div>

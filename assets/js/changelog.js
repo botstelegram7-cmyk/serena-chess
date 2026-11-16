@@ -5,8 +5,8 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.9.3';
-  var BUILD = 12;
+  var VERSION = '3.0';
+  var BUILD = 13;
 
   var LOG = [
     { v: '1.9', date: '2026-10-02', items: [
