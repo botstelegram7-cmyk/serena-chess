@@ -2798,15 +2798,16 @@ var reviewInGame = false;
   var touchMoved = false;
   var multiTouch = false;
 
-  /* Guard against mistaps while scrolling: when the home scroll container
-     has scrolled recently, suppress tap-to-click for a short window so an
-     accidental lift near a mode card doesn't launch a game. */
+  /* Guard against mistaps while scrolling: when a scroll container has
+     scrolled recently, suppress tap-to-click briefly so an accidental lift
+     near a button doesn't launch an action. Kept short (60ms) so the app
+     stays responsive. */
   function guardScrollMistaps() {
-    var homeScroll = $('#screen-home .scroll');
-    if (!homeScroll) return;
-    homeScroll.addEventListener('scroll', function () {
-      lastScrollAt = Date.now();
-    }, { passive: true });
+    $$('.scroll').forEach(function (sc) {
+      sc.addEventListener('scroll', function () {
+        lastScrollAt = Date.now();
+      }, { passive: true });
+    });
   }
 
   document.addEventListener('touchstart', function (e) {
@@ -2834,7 +2835,7 @@ var reviewInGame = false;
     multiTouch = false;
 
     if (moved || !start || !e.target || !e.target.closest) return;
-    if (Date.now() - lastScrollAt < 150) return; /* scrolling just happened — ignore tap */
+    if (Date.now() - lastScrollAt < 60) return; /* scrolling just happened — ignore tap */
     if (e.target.closest('#board, #puzzle-board')) return;
     /* Native focus/keyboard/selection behaviour is important for form fields. */
     if (e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
@@ -2850,8 +2851,8 @@ var reviewInGame = false;
   }, { passive: false });
 
   document.addEventListener('click', function (e) {
-    if (!e.__touchReplay && Date.now() - lastTouchActionAt < 750) return;
-    if (Date.now() - lastScrollAt < 150) return; /* scrolling just happened — ignore tap */
+    if (!e.__touchReplay && Date.now() - lastTouchActionAt < 100) return;
+    if (Date.now() - lastScrollAt < 60) return; /* scrolling just happened — ignore tap */
     /* ---- move navigation: < > |< >| and tapping a move in the bar ---- */
     var navEl = e.target.closest('[data-nav]');
     if (navEl && !navEl.disabled) {

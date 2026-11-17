@@ -59,7 +59,7 @@ body {
 
 button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
 button { background: none; border: none; cursor: pointer; }
-button, a, [role="button"] { touch-action: manipulation; }
+button, a, [role="button"], [data-go], [data-action], [data-nav], [data-engine-mode], [data-side], .side-btn, .tc-chip, .vcr-btn, .rev-h-btn, .review-tab { touch-action: manipulation; }
 button { -webkit-user-select: none; user-select: none; }
 button:not(:disabled):active { filter: brightness(0.92); }
 

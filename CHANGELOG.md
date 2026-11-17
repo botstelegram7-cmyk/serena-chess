@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.7 — 2026-11-01
+
+### Touch responsiveness fix
+
+- Reduced scroll-guard suppression from 150ms → 60ms for faster tap response
+- Reduced native click block from 750ms → 100ms so buttons respond immediately
+- Added `touch-action: manipulation` to all interactive elements (buttons, VCR controls, side selectors, time chips, tabs)
+- guardScrollMistaps now covers all scroll containers, not just home
+- All home screen buttons, VCR controls, and review UI elements respond to taps
+
 ## 3.6 — 2026-11-01
 
 ### Chess.com style game review + move classification badges
