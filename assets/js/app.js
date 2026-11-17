@@ -281,6 +281,7 @@
     startedAt: 0
   };
   var board = null;
+var reviewBoard = null;
 
   /* ─────────────────────────────────────────────────────── bot chat ─── */
   var chatLog = [];
@@ -465,6 +466,13 @@
     board.onMove = handleUserMove;
   }
 
+  function initReviewBoard() {
+    reviewBoard = new UI.Board($('#review-board'), {
+      set: settings.piece, theme: settings.board, coords: settings.coords,
+      hints: false, lastMove: true, animate: false, interactive: false
+    });
+  }
+
   /* ─────────────────────────────────────────────── move navigation ─── */
   /** true when the user has stepped back from the live position */
   function browsing() { return G.viewPly !== null && G.viewPly !== G.moves.length; }
@@ -483,14 +491,34 @@
     var mv = G.hist.moveAt(ply);
     var lastMove = mv ? { from: mv.from, to: mv.to } : null;
 
-    board.setPosition(g, lastMove);
-    board.clearArrow(); board.clearMarks();
+    var useReviewBoard = (current === 'review' && reviewBoard);
+    if (useReviewBoard) {
+      reviewBoard.setPosition(g, lastMove);
+      reviewBoard.clearArrow(); reviewBoard.clearMarks();
+    } else {
+      board.setPosition(g, lastMove);
+      board.clearArrow(); board.clearMarks();
+    }
     if (!silent && (wasBrowsing || browsing())) UI.Sound.play(mv && mv.san.indexOf('x') >= 0 ? 'capture' : 'moveOpp');
 
     renderMoveBar();
     updateNav();
     updateBar();
-    if (G.review) paintEvalAt(ply);
+    if (G.review) {
+      paintEvalAt(ply);
+      labelPiecesForPly(ply);
+      updateCoachInsight(ply);
+      /* highlight current move in review list */
+      $('#rev-move-list').querySelectorAll('.rev-move-row').forEach(function (r) { r.classList.remove('cur'); });
+      if (ply > 0) {
+        var cur = $('#rev-move-list').querySelector('[data-ply="' + ply + '"]');
+        if (cur) cur.classList.add('cur');
+      }
+      /* sync VCR play button state */
+      var pb = $('#rev-vcr-play');
+      if (pb && reviewPlayInterval) pb.innerHTML = '<svg class="ic"><use href="#i-pause"/></svg>';
+      else if (pb) pb.innerHTML = '<svg class="ic"><use href="#i-play"/></svg>';
+    }
   }
 
   function updateNav() {
@@ -1297,12 +1325,19 @@
     var r = ply > 0 ? G.review.moves[ply - 1] : null;
     var cp = r ? r.cp : 0;
     var pct = RV.winChance(cp) * 100;
-    $('#evalbar').hidden = false;
-    $('#eval-fill').style.width = pct.toFixed(1) + '%';
     var txt = r && r.mate !== null && r.mate !== undefined
       ? 'M' + Math.abs(r.mate)
       : (cp >= 0 ? '+' : '\u2212') + (Math.abs(cp) / 100).toFixed(1);
-    $('#eval-num').textContent = txt;
+    var isReviewScreen = (current === 'review');
+    if (isReviewScreen) {
+      $('#rev-eval-bar').hidden = false;
+      $('#rev-eval-fill').style.width = pct.toFixed(1) + '%';
+      $('#rev-eval-text').textContent = txt;
+    } else {
+      $('#evalbar').hidden = false;
+      $('#eval-fill').style.width = pct.toFixed(1) + '%';
+      $('#eval-num').textContent = txt;
+    }
   }
 
   function openReview(hist, meta) {
@@ -1331,20 +1366,28 @@
   }
 
   var reviewMeta = null, reviewHist = null, reviewRes = null;
+var reviewInGame = false;
 
   function renderReview(res, hist, meta) {
     reviewRes = res;
     $('#analysing').hidden = true;
-    $('#review-body').hidden = false;
 
-    $('#acc-w-name').textContent = meta.white || 'White';
-    $('#acc-b-name').textContent = meta.black || 'Black';
-    $('#acc-w').textContent = res.white.accuracy.toFixed(1);
-    $('#acc-b').textContent = res.black.accuracy.toFixed(1);
-    $('#acc-opening').textContent = res.opening || 'Irregular opening';
+    /* --- Accuracy header --- */
+    $('#rev-acc-w-label').textContent = (meta.white || 'White');
+    $('#rev-acc-b-label').textContent = (meta.black || 'Black');
+    $('#rev-acc-w-val').textContent = res.white.accuracy.toFixed(1);
+    $('#rev-acc-b-val').textContent = res.black.accuracy.toFixed(1);
+    $('#rev-acc-vs-val').textContent = (res.white.accuracy - res.black.accuracy >= 0 ? '+' : '') + (res.white.accuracy - res.black.accuracy).toFixed(1);
+    $('#rev-acc-vs-val').style.color = res.white.accuracy >= res.black.accuracy ? '#4ade80' : '#f87171';
 
-    /* eval graph */
-    var svg = $('#eval-graph'), W = 300, H = 80;
+    /* --- Player profiles --- */
+    $('#rev-top-name').textContent = meta.black || 'Opponent';
+    $('#rev-top-elo').textContent = (meta.blackElo || 0) + ' Elo';
+    $('#rev-bot-name').textContent = meta.white || 'You';
+    $('#rev-bot-elo').textContent = (meta.whiteElo || 0) + ' Elo';
+
+    /* --- Eval graph (full width SVG) --- */
+    var svg = $('#rev-eval-graph'), W = 400, H = 120;
     var pts = res.moves.map(function (m, i) {
       var x = res.moves.length > 1 ? (i / (res.moves.length - 1)) * W : W / 2;
       var y = H - RV.winChance(m.cp) * H;
@@ -1354,69 +1397,244 @@
       ? '0,' + H + ' ' + pts.join(' ') + ' ' + W + ',' + H
       : '';
     svg.innerHTML =
-      '<rect width="' + W + '" height="' + H + '" fill="#3a3734"/>' +
-      (area ? '<polygon points="' + area + '" fill="#eeeeea" opacity=".92"/>' : '') +
+      '<rect width="' + W + '" height="' + H + '" fill="#0f172a"/>' +
+      (area ? '<polygon points="' + area + '" fill="#eeeeea" opacity="0.92"/>' : '') +
       '<line x1="0" y1="' + (H / 2) + '" x2="' + W + '" y2="' + (H / 2) +
-      '" stroke="#81b64c" stroke-width="1" stroke-dasharray="4 3" opacity=".65"/>';
+      '" stroke="#81b64c" stroke-width="1" stroke-dasharray="4 3" opacity="0.65"/>';
 
-    /* breakdown counts */
+    /* --- Move tally --- */
+    var tally = $('#rev-move-tally');
     var order = ['brilliant', 'great', 'best', 'excellent', 'good', 'book',
                  'inaccuracy', 'mistake', 'blunder'];
-    var brk = $('#brk'); brk.innerHTML = '';
-    order.forEach(function (k) {
-      var n = (res.white.counts[k] || 0) + (res.black.counts[k] || 0);
-      if (!n) return;
-      var d = document.createElement('div');
-      d.className = 'brk-item';
-      d.innerHTML = '<span class="brk-dot dot-' + k + '"></span>' +
-                    '<span class="brk-name">' + RV.LABELS[k].name + '</span>' +
-                    '<span class="brk-n lab-' + k + '">' + n + '</span>';
-      brk.appendChild(d);
+    tally.innerHTML = '';
+    ['w', 'b'].forEach(function (sideKey, si) {
+      var side = si === 0 ? res.white : res.black;
+      var sideName = si === 0 ? 'White' : 'Black';
+      var row = document.createElement('div');
+      row.className = 'tally-row';
+      var sideEl = document.createElement('div');
+      sideEl.className = 'tally-side ' + sideKey;
+      sideEl.textContent = sideName;
+      var countsEl = document.createElement('div');
+      countsEl.className = 'tally-counts';
+      order.forEach(function (k) {
+        var n = side.counts[k] || 0;
+        if (!n) return;
+        var item = document.createElement('div');
+        item.className = 'tally-item';
+        var dot = document.createElement('span');
+        dot.className = 'tally-dot dot-' + k;
+        var nEl = document.createElement('span');
+        nEl.className = 'tally-n';
+        nEl.textContent = n;
+        var nameEl = document.createElement('span');
+        nameEl.textContent = RV.LABELS[k].name;
+        item.appendChild(dot); item.appendChild(nEl); item.appendChild(nameEl);
+        countsEl.appendChild(item);
+      });
+      row.appendChild(sideEl); row.appendChild(countsEl);
+      tally.appendChild(row);
     });
 
-    /* every move */
-    var list = $('#rev-list'); list.innerHTML = '';
+    /* --- Move list with classification badges --- */
+    var list = $('#rev-move-list'); list.innerHTML = '';
     res.moves.forEach(function (m) {
-      var b = document.createElement('button');
-      b.className = 'rev-row';
       var num = Math.floor(m.ply / 2) + 1;
       var cp = m.mate !== null && m.mate !== undefined
         ? 'M' + Math.abs(m.mate)
         : (m.cp >= 0 ? '+' : '\u2212') + (Math.abs(m.cp) / 100).toFixed(1);
-            var fmtCp = function (cp) {
-        if (m.mate !== null && m.mate !== undefined) return 'M' + Math.abs(m.mate);
-        return (cp >= 0 ? '+' : '\u2212') + (Math.abs(cp) / 100).toFixed(1);
-      };
-      var yourCp = fmtCp(m.cp), bestCp = fmtCp(m.bestCp);
       var acc = Math.round(m.accuracy) + '%';
-      var lost = m.cpLoss ? ('\u00b7 ' + m.cpLoss + 'cp') : '';
       var mark = { brilliant:'!!', great:'!', excellent:'!', inaccuracy:'?!', mistake:'?', blunder:'??' }[m.label] || '';
+      var labelCls = m.label ? 'lab-' + m.label : '';
+      var badgeHtml = mark ? '<div class="rev-move-badge ' + labelCls + '">' + mark + '</div>' : '';
+
+      var b = document.createElement('button');
+      b.className = 'rev-move-row';
+      b.dataset.ply = m.ply;
       b.innerHTML =
-        '<span class="rev-no">' + num + (m.color === E.WHITE ? '.' : '\u2026') + '</span>' +
-        '<div class="rev-side you">' +
-          '<b>You</b>' +
-          '<span class="rev-san">' + m.san + mark + '</span>' +
-          '<span class="rev-eval">' + yourCp + '</span>' +
-          '<span class="rev-acc">' + acc + '</span>' +
-        '</div>' +
-        '<div class="rev-side best">' +
-          '<b>Best</b>' +
-          '<span class="rev-san">' + (m.best || '\u2014') + '</span>' +
-          '<span class="rev-eval">' + bestCp + '</span>' +
-          '<span class="rev-acc ' + (m.label === 'best' || m.label === 'book' ? 'lab-best' : '') + '">' + lost + '</span>' +
-        '</div>' +
-        '<span class="rev-lab lab-' + m.label + '">' + RV.LABELS[m.label].name + '</span>';
+        '<span class="rev-move-no">' + num + (m.color === E.WHITE ? '.' : '\u2026') + '</span>' +
+        '<span class="rev-move-san">' + m.san + mark + '</span>' +
+        badgeHtml +
+        '<span class="rev-move-eval">' + cp + '</span>' +
+        '<span class="rev-move-acc">' + acc + '</span>';
       b.addEventListener('click', function () {
+        $('#rev-move-list').querySelectorAll('.rev-move-row').forEach(function (r) { r.classList.remove('cur'); });
+        b.classList.add('cur');
         if (hist === G.hist) { go('game'); navTo(m.ply + 1); }
       });
       list.appendChild(b);
     });
 
-    $('#pgn-box').textContent = RV.pgn(hist, meta, res);
-    if (hist === G.hist) { renderMoveBar(); paintEvalAt(G.viewPly === null ? hist.length() : G.viewPly); }
+    /* --- Coach insight for first move --- */
+    updateCoachInsight(null);
+
+    /* --- Initialize review state --- */
+    reviewInGame = (hist === G.hist);
+    if (reviewInGame) {
+      $('#rev-eval-bar').hidden = false;
+      renderMoveBar();
+      var lastPly = hist.length();
+      navTo(lastPly);
+      paintEvalAt(lastPly);
+      labelPiecesForPly(lastPly);
+    } else {
+      $('#rev-eval-bar').hidden = true;
+    }
   }
 
-  function currentMeta() {
+  /* Label pieces on the board with move classification badges for the current ply */
+  function labelPiecesForPly(ply) {
+    var rb = (current === 'review' && reviewBoard) ? reviewBoard : board;
+    rb.clearLabels();
+    if (!reviewRes || !reviewRes.moves) return;
+    var m = reviewRes.moves[ply - 1];
+    if (!m || !m.label || m.label === 'best' || m.label === 'book' || m.label === 'good' || m.label === 'excellent') return;
+    var label = RV.LABELS[m.label];
+    if (label && label.mark) {
+      var g = reviewHist.gameAt(ply - 1);
+      var mv = reviewHist.moveAt(ply);
+      if (mv) rb.labelPiece(mv.from, { cls: label.cls, mark: label.mark });
+    }
+  }
+
+  /* Update coach insight card based on current ply */
+  function updateCoachInsight(ply) {
+    var card = $('#rev-coach-text');
+    var btn = $('#rev-coach-btn') || document.querySelector('[data-action="review-retry"]');
+    if (!reviewRes || !reviewRes.moves) {
+      if (card) card.textContent = 'Select a move to see analysis.';
+      return;
+    }
+    var p = ply !== null && ply !== undefined ? ply : G.viewPly;
+    if (p === null) p = reviewRes.moves.length;
+    var m = p > 0 ? reviewRes.moves[p - 1] : null;
+    if (!m) {
+      if (card) card.textContent = 'Game complete. Review any move above for analysis.';
+      return;
+    }
+    var mark = { brilliant:'!!', great:'!', excellent:'!', inaccuracy:'?!', mistake:'?', blunder:'??' }[m.label] || '';
+    var msg = '';
+    if (m.label === 'blunder') msg = 'Blunder! You lost ' + (m.cpLoss || 0) + 'cp. Best was ' + (m.best || '—') + '.';
+    else if (m.label === 'mistake') msg = 'Mistake. You lost ' + (m.cpLoss || 0) + 'cp. Best was ' + (m.best || '—') + '.';
+    else if (m.label === 'inaccuracy') msg = 'Inaccuracy. You lost ' + (m.cpLoss || 0) + 'cp. Best was ' + (m.best || '—') + '.';
+    else if (m.label === 'brilliant') msg = 'Brilliant move! ' + (m.best || '') + '.';
+    else if (m.label === 'great') msg = 'Great move! You found the best continuation.';
+    else if (m.label === 'best') msg = 'Best move. Perfect play.';
+    else if (m.label === 'excellent') msg = 'Excellent move, very close to best.';
+    else if (m.label === 'good') msg = 'Good move, solid play.';
+    else if (m.label === 'book') msg = 'Opening book move.';
+    else msg = 'Move played: ' + m.san + ' ' + mark;
+    if (card) card.textContent = msg;
+    if (btn) btn.hidden = !m || (m.label !== 'blunder' && m.label !== 'mistake' && m.label !== 'inaccuracy');
+  }
+
+  /* VCR control handlers */
+  function reviewVCR(dir) {
+    if (!reviewRes || !reviewHist) return;
+    var max = reviewHist.length();
+    var at = G.viewPly === null ? max : G.viewPly;
+    var np = at;
+    if (dir === 'first') np = 0;
+    else if (dir === 'prev') np = Math.max(0, at - 1);
+    else if (dir === 'next') np = Math.min(max, at + 1);
+    else if (dir === 'last') np = max;
+    navTo(np);
+    paintEvalAt(np);
+    labelPiecesForPly(np);
+    updateCoachInsight(np);
+    $('#rev-move-list').querySelectorAll('.rev-move-row').forEach(function (r) { r.classList.remove('cur'); });
+    var cur = $('#rev-move-list').querySelector('[data-ply="' + np + '"]');
+    if (cur) cur.classList.add('cur');
+  }
+
+  var reviewPlayInterval = null;
+  function reviewTogglePlay() {
+    if (reviewPlayInterval) {
+      clearInterval(reviewPlayInterval);
+      reviewPlayInterval = null;
+      $('#rev-vcr-play').innerHTML = '<svg class="ic"><use href="#i-play"/></svg>';
+      return;
+    }
+    $('#rev-vcr-play').innerHTML = '<svg class="ic"><use href="#i-pause"/></svg>';
+    reviewPlayInterval = setInterval(function () {
+      if (!reviewRes || !reviewHist) { clearInterval(reviewPlayInterval); reviewPlayInterval = null; $('#rev-vcr-play').innerHTML = '<svg class="ic"><use href="#i-play"/></svg>'; return; }
+      var max = reviewHist.length();
+      var at = G.viewPly === null ? max : G.viewPly;
+      if (at >= max) { clearInterval(reviewPlayInterval); reviewPlayInterval = null; $('#rev-vcr-play').innerHTML = '<svg class="ic"><use href="#i-play"/></svg>'; return; }
+      navTo(at + 1);
+      paintEvalAt(at + 1);
+      labelPiecesForPly(at + 1);
+      updateCoachInsight(at + 1);
+      $('#rev-move-list').querySelectorAll('.rev-move-row').forEach(function (r) { r.classList.remove('cur'); });
+      var cur = $('#rev-move-list').querySelector('[data-ply="' + (at + 1) + '"]');
+      if (cur) cur.classList.add('cur');
+    }, 1200);
+  }
+
+  /* Tab switching */
+  function reviewTab(tab) {
+    $$('.review-tab').forEach(function (t) { t.classList.toggle('active', t.dataset.tab === tab); });
+    $$('.review-tab-content').forEach(function (c) { c.classList.toggle('active', c.id === 'rev-tab-' + tab); });
+    if (tab === 'graph') renderEvalGraph();
+    if (tab === 'tally') renderMoveTally();
+  }
+
+  function renderEvalGraph() {
+    var svg = $('#rev-eval-graph');
+    if (!svg) return;
+    var res = reviewRes;
+    if (!res || !res.moves) return;
+    var W = 400, H = 120;
+    var pts = res.moves.map(function (m, i) {
+      var x = res.moves.length > 1 ? (i / (res.moves.length - 1)) * W : W / 2;
+      var y = H - RV.winChance(m.cp) * H;
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    });
+    var area = pts.length ? '0,' + H + ' ' + pts.join(' ') + ' ' + W + ',' + H : '';
+    svg.innerHTML =
+      '<rect width="' + W + '" height="' + H + '" fill="#0f172a"/>' +
+      (area ? '<polygon points="' + area + '" fill="#eeeeea" opacity="0.92"/>' : '') +
+      '<line x1="0" y1="' + (H / 2) + '" x2="' + W + '" y2="' + (H / 2) +
+      '" stroke="#81b64c" stroke-width="1" stroke-dasharray="4 3" opacity="0.65"/>';
+  }
+
+  function renderMoveTally() {
+    var tally = $('#rev-move-tally');
+    if (!tally || !reviewRes) return;
+    var order = ['brilliant', 'great', 'best', 'excellent', 'good', 'book',
+                 'inaccuracy', 'mistake', 'blunder'];
+    tally.innerHTML = '';
+    ['w', 'b'].forEach(function (sideKey, si) {
+      var side = si === 0 ? reviewRes.white : reviewRes.black;
+      var sideName = si === 0 ? 'White' : 'Black';
+      var row = document.createElement('div');
+      row.className = 'tally-row';
+      var sideEl = document.createElement('div');
+      sideEl.className = 'tally-side ' + sideKey;
+      sideEl.textContent = sideName;
+      var countsEl = document.createElement('div');
+      countsEl.className = 'tally-counts';
+      order.forEach(function (k) {
+        var n = side.counts[k] || 0;
+        if (!n) return;
+        var item = document.createElement('div');
+        item.className = 'tally-item';
+        var dot = document.createElement('span');
+        dot.className = 'tally-dot dot-' + k;
+        var nEl = document.createElement('span');
+        nEl.className = 'tally-n';
+        nEl.textContent = n;
+        var nameEl = document.createElement('span');
+        nameEl.textContent = RV.LABELS[k].name;
+        item.appendChild(dot); item.appendChild(nEl); item.appendChild(nameEl);
+        countsEl.appendChild(item);
+      });
+      row.appendChild(sideEl); row.appendChild(countsEl);
+      tally.appendChild(row);
+    });
+  }
+
+  function currentMeta() {  function currentMeta() {
     var names = playerNames();
     var res = G.over ? (function () {
       var ov = $('#ov-title').textContent || '';
@@ -2753,7 +2971,26 @@
     }
     if (a === 'close-review') {
       if (analysisHandle) { analysisHandle.cancel(); analysisHandle = null; }
+      if (reviewPlayInterval) { clearInterval(reviewPlayInterval); reviewPlayInterval = null; }
       if (G.game) { go('game'); showResult(false); } else { go('home'); }
+      return;
+    }
+    if (a === 'review-play-pause') { reviewTogglePlay(); return; }
+    if (a === 'review-retry') {
+      if (reviewRes && reviewHist && G.viewPly !== null) {
+        var ply = G.viewPly;
+        go('game');
+        navTo(ply - 1); /* go back to before the move, user can retry it */
+      }
+      return;
+    }
+    if (a === 'flip-review') {
+      var rb = (current === 'review' && reviewBoard) ? reviewBoard : board;
+      if (rb) rb.setFlipped(!rb.flipped);
+      return;
+    }
+    if (act.dataset.tab) {
+      reviewTab(act.dataset.tab);
       return;
     }
     if (a === 'copy-pgn' || a === 'share-pgn') {
@@ -3017,6 +3254,7 @@
   /* ─────────────────────────────────────────────────────────── boot ─── */
   function boot() {
     initBoard();
+    initReviewBoard();
     initPuzzleBoard();
     applyAppearance();
     buildQuickBots(); buildBotGrid(); buildAvatarColors();

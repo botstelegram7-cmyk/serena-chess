@@ -48,6 +48,7 @@
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5h2v7h-2zM14 8.5h2v7h-2z" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5A2.5 2.5 0 0 1 4 20.5z"/></symbol>
 </defs></svg>
 
@@ -174,7 +175,7 @@
       <div class="stat"><div class="stat-val" id="hm-b">–</div><div class="stat-key">Best win</div></div>
     </div>
 
-    <div class="home-foot" id="ver-tag">Serena Chess · v3.5</div>
+    <div class="home-foot" id="ver-tag">Serena Chess · v3.6</div>
   </div>
 </section>
 
@@ -691,50 +692,111 @@
 
 <!-- ══════════════════════════════════════════════════ REVIEW ═══ -->
 
-<section class="screen" id="screen-review">
-  <header class="app-bar">
-    <button class="icon-btn" data-action="close-review"><svg class="ic"><use href="#i-back"/></svg></button>
-    <div class="app-title">Game Review</div>
-    <button class="icon-btn" data-action="share-pgn" aria-label="Export PGN"><svg class="ic"><use href="#i-share"/></svg></button>
-  </header>
-  <div class="scroll">
-    <div class="analysing" id="analysing">
-      <div class="an-title">Analysing your game…</div>
-      <div class="an-bar"><i id="an-fill"></i></div>
-      <div class="an-sub" id="an-sub">0 / 0</div>
-    </div>
+<!-- ═══════════════════════════════════════════════════ REVIEW ═══ -->
 
-    <div id="review-body" hidden>
-      <div class="acc-row">
-        <div class="acc acc-w">
-          <div class="acc-name" id="acc-w-name">White</div>
-          <div class="acc-val" id="acc-w">0</div>
-          <div class="acc-key">Accuracy</div>
-        </div>
-        <div class="acc-mid" id="acc-opening">–</div>
-        <div class="acc acc-b">
-          <div class="acc-name" id="acc-b-name">Black</div>
-          <div class="acc-val" id="acc-b">0</div>
-          <div class="acc-key">Accuracy</div>
+<section class="screen" id="screen-review">
+  <div class="review-header">
+    <button class="rev-h-btn" data-action="close-review" aria-label="Close"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="review-accuracy">
+      <div class="rev-acc-pill">
+        <div class="acc-label" id="rev-acc-w-label">White</div>
+        <div class="acc-val" id="rev-acc-w-val">0.0</div>
+      </div>
+      <div class="rev-acc-pill">
+        <div class="acc-label">vs</div>
+        <div class="acc-val" id="rev-acc-vs-val">0.0</div>
+      </div>
+      <div class="rev-acc-pill">
+        <div class="acc-label" id="rev-acc-b-label">Black</div>
+        <div class="acc-val" id="rev-acc-b-val">0.0</div>
+      </div>
+    </div>
+    <button class="rev-h-btn" data-action="flip-review" aria-label="Flip board"><svg class="ic"><use href="#i-flip"/></svg></button>
+  </div>
+
+  <div class="review-wrap">
+    <div class="review-boards">
+      <!-- Opponent Profile (Top) -->
+      <div class="review-player-row">
+        <div class="review-player">
+          <div class="pl-avatar" id="rev-top-avatar">?</div>
+          <div class="pl-info">
+            <div class="pl-name" id="rev-top-name">Opponent</div>
+            <div class="pl-elo" id="rev-top-elo">0 Elo</div>
+            <div class="pl-clock" id="rev-top-clock">--:--</div>
+          </div>
         </div>
       </div>
 
-      <div class="graph-wrap"><svg class="eval-graph" id="eval-graph" viewBox="0 0 300 80" preserveAspectRatio="none"></svg></div>
+      <!-- Board Area with Eval Bar -->
+      <div class="review-board-area">
+        <div class="review-eval-bar" id="rev-eval-bar" hidden>
+          <div class="review-eval-fill" id="rev-eval-fill"></div>
+          <div class="review-eval-text" id="rev-eval-text">0.0</div>
+        </div>
+        <div class="review-board-holder">
+          <div class="board" id="review-board"></div>
+          <svg class="arrow-layer" id="review-arrow-layer" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+        </div>
+      </div>
 
-      <div class="section-label">Move breakdown</div>
-      <div class="brk" id="brk"></div>
+      <!-- Player Profile (Bottom) -->
+      <div class="review-player-row">
+        <div class="review-player">
+          <div class="pl-avatar" id="rev-bot-avatar">P</div>
+          <div class="pl-info">
+            <div class="pl-name" id="rev-bot-name">You</div>
+            <div class="pl-elo" id="rev-bot-elo">0 Elo</div>
+            <div class="pl-clock" id="rev-bot-clock">--:--</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <div class="section-label">Every move</div>
-      <div class="rev-list" id="rev-list"></div>
+    <!-- VCR Controls -->
+    <div class="review-vcr">
+      <button class="vcr-btn vcr-first" data-nav="first" aria-label="First move"><svg class="ic"><use href="#i-first"/></svg></button>
+      <button class="vcr-btn vcr-prev" data-nav="prev" aria-label="Previous move"><svg class="ic"><use href="#i-back"/></svg></button>
+      <button class="vcr-btn vcr-play" id="rev-vcr-play" data-action="review-play-pause" aria-label="Play/Pause"><svg class="ic"><use href="#i-play"/></svg></button>
+      <button class="vcr-btn vcr-next" data-nav="next" aria-label="Next move"><svg class="ic"><use href="#i-next"/></svg></button>
+      <button class="vcr-btn vcr-last" data-nav="last" aria-label="Last move"><svg class="ic"><use href="#i-last"/></svg></button>
+      <button class="vcr-btn" data-action="share-pgn" aria-label="Export PGN"><svg class="ic"><use href="#i-share"/></svg></button>
+    </div>
 
-      <div class="section-label">PGN</div>
-      <pre class="pgn-box" id="pgn-box"></pre>
-      <button class="btn btn-ghost btn-wide" data-action="copy-pgn"><svg class="ic"><use href="#i-copy"/></svg> Copy PGN</button>
+    <!-- Move List -->
+    <div class="review-movelist">
+      <div class="review-movelist-wrap">
+        <div class="section-label">Moves</div>
+        <div class="rev-move-list" id="rev-move-list"></div>
+      </div>
+    </div>
+
+    <!-- Coach Insight -->
+    <div class="review-coach">
+      <div class="coach-card">
+        <div class="coach-label">Coach Insight</div>
+        <div class="coach-text" id="rev-coach-text">Select a move to see analysis.</div>
+        <button class="coach-btn" data-action="review-retry">Retry Move</button>
+      </div>
+    </div>
+
+    <!-- Bottom Tabs -->
+    <div class="review-tabs">
+      <button class="review-tab active" data-tab="graph"><svg class="ic"><use href="#i-chart"/></svg>Eval Graph</button>
+      <button class="review-tab" data-tab="tally"><svg class="ic"><use href="#i-users"/></svg>Move Tally</button>
+    </div>
+
+    <div class="review-tab-content active" id="rev-tab-graph">
+      <div class="eval-graph-wrap">
+        <svg class="eval-graph-svg" id="rev-eval-graph" viewBox="0 0 400 120" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+
+    <div class="review-tab-content" id="rev-tab-tally">
+      <div class="move-tally" id="rev-move-tally"></div>
     </div>
   </div>
 </section>
-
-<!-- ════════════════════════════════════════════════════ SHEETS ═══ -->
 
 <!-- archive sheet -->
 <div class="sheet" id="archive-sheet" hidden>

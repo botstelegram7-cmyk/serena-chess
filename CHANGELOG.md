@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.6 — 2026-11-01
+
+### Chess.com style game review + move classification badges
+
+- Full chess.com-style review UI: top accuracy header, opponent/player profiles, eval bar on board edge
+- VCR controls (First/Prev/Play/Next/Last) for stepping through moves
+- Move classification badges (!!, !, ?, ??) on piece corners during review
+- Move list with classification icons and eval scores
+- Coach insight card with per-move feedback
+- Bottom tabs: Eval Graph + Move Tally with per-side breakdown
+- Time/color selection fixes from v3.5 carried forward
+- Default VPS: https://chessapp.onvoroa.com/
+
 ## 3.5 — 2026-11-01
 
 ### Time & color selection fixed, default VPS updated

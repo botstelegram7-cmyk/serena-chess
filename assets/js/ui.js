@@ -151,9 +151,23 @@
     this.lastMove = lastMove || null;
     this.selected = -1;
     this.legalForSel = [];
+    this.pieceLabels = {};
     this.clearArrow();
     this.render();
   };
+
+/* Label a piece square with a move classification badge (!!, !, ?, ?? etc).
+   Call this during review to show classification icons on piece corners. */
+Board.prototype.labelPiece = function (sq, label) {
+  if (!label) { delete this.pieceLabels[sq]; return; }
+  this.pieceLabels[sq] = label;
+  this.render();
+};
+
+Board.prototype.clearLabels = function () {
+  this.pieceLabels = {};
+  this.render();
+};
 
   Board.prototype.render = function () {
     if (!this.game) return;
@@ -221,6 +235,13 @@
     var rc = this.vRowCol(sq);
     el.style.transform = 'translate(' + (rc[1] * 100) + '%,' + (rc[0] * 100) + '%)';
     el.dataset.sq = sq;
+    var lab = this.pieceLabels && this.pieceLabels[sq];
+    if (lab) {
+      var badge = document.createElement('div');
+      badge.className = 'piece-badge piece-badge-' + lab.cls;
+      badge.textContent = lab.mark;
+      el.appendChild(badge);
+    }
     this.pieces[sq] = el;
     return el;
   };
