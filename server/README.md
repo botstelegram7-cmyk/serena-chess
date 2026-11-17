@@ -1,11 +1,13 @@
 # Chess relay server
 
-A ~250-line WebSocket relay that powers **Play Online** and **Play with Friends**
-in the Chess app.
+A WebSocket relay and optional VPS Stockfish service for the Chess app. It powers
+**Play Online**, **Play with Friends**, and (when Stockfish is installed) games
+against the full Stockfish engine.
 
-It is deliberately *dumb about chess*: it never validates a move. Both phones run
-the same rules engine locally, so the server only pairs players and forwards
-messages. That keeps it small enough for any free tier.
+The `server/Dockerfile` installs a native Stockfish binary and the relay verifies
+the UCI `uci` / `isready` handshake before `/health` reports `stockfish: true`.
+The mobile app explicitly distinguishes its built-in character engine from VPS
+Stockfish; a failed Stockfish request is never silently presented as a Stockfish move.
 
 ## Run locally
 
@@ -22,11 +24,11 @@ Then in the app: **Settings → Online → Server URL** → `ws://YOUR-LAN-IP:80
 
 ### Render
 1. Push this repo to GitHub.
-2. New → **Web Service** → point at this repo, set **Root Directory** to `server`.
-3. Build `npm install`, start `npm start`. Free instance type is fine.
-4. Your URL will be `https://something.onrender.com` → use **`wss://something.onrender.com`** in the app.
+2. In Render, choose **New → Blueprint** and select this repo; `server/render.yaml` configures the service to build with Docker and install Stockfish.
+3. Or create a **Docker** web service manually, using `server` as the root directory and the included `Dockerfile`.
+4. Your URL will be `https://something.onrender.com`; use the matching URL in **Settings → Relay server URL** in the app.
 
-`render.yaml` is included, so "New → Blueprint" also works.
+The blueprint is configured for Docker; do not deploy this Stockfish service using the Node-only build/start commands.
 
 > Render's free tier sleeps after 15 minutes idle. The first connection then takes
 > ~30 s to wake. The app shows "Connecting…" during that and retries automatically.
@@ -38,11 +40,20 @@ Any Node host works. A `Dockerfile` is included:
 fly launch --dockerfile Dockerfile
 ```
 
-## Health check
+## Stockfish readiness check
 
+Deploy with Docker (the included Dockerfile installs Stockfish) or install a native
+Stockfish executable on the VPS and set `STOCKFISH_BIN` to its absolute path. The
+app's **Stockfish VPS** option stays unavailable until this check returns true:
+
+```sh
+curl https://YOUR-SERVER/health
+# { "ok": true, "rooms": 0, "queued": 0, "games": 12, "uptime": 420, "stockfish": true }
 ```
-GET /health → { "ok": true, "rooms": 0, "queued": 0, "games": 12, "uptime": 420 }
-```
+
+The move endpoint is `POST /stockfish` with JSON `{ "fen": "...", "color": "w" }`.
+It returns `{ "bestmove": "e2e4" }`; unavailable engines return HTTP 503 with a
+reason. CORS preflight is enabled for the app's JSON request.
 
 ## Protocol
 

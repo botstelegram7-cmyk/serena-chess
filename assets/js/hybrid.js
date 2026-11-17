@@ -1,16 +1,9 @@
 /* =========================================================================
-   hybrid.js — Stockfish cloud API with local JS engine fallback
+   hybrid.js — explicit VPS Stockfish access + local engine fallback helpers
    -------------------------------------------------------------------------
-   When online vs a bot, the app asks the Voroa backend (native Stockfish
-   binary) for the best move. When offline, it falls back to the bundled
-   JS engine so play never stops on old Android WebViews that cannot run
-   WebAssembly or native binaries.
-
-   Usage:
-     Hybrid.configure('https://my-server.voroa.app');
-     Hybrid.getBestMove(fen, color, (bestmove) => { ... });
-     Hybrid.isOnline();      // true if network reachable
-     Hybrid.useCloud();      // true if last answer came from the cloud
+   The app now chooses its engine per game. VPS Stockfish requests are strict:
+   they never silently switch to the local engine. The local character engine
+   remains available offline and keeps each bot's individual style.
    ========================================================================= */
 (function (root) {
   'use strict';
@@ -20,105 +13,170 @@
   var BOTS = root.ChessBots || (typeof require !== 'undefined' ? require('./bots.js') : null);
 
   var serverUrl = '';
-  var wantCloud = false;
-  var lastCloud = false;
   var online = typeof navigator !== 'undefined' ? !!navigator.onLine : true;
+  var stockfishAvailable = null; // null = not checked, otherwise a server capability result
+  var serverReachable = null;    // null = not checked; separates VPS health from device connectivity
+  var lastCloud = false;
   var listeners = [];
 
-  function onState(fn) { listeners.push(fn); }
-  function emit() { for (var i = 0; i < listeners.length; i++) try { listeners[i](online, wantCloud, lastCloud); } catch (e) {} }
+  function onState(fn) { if (typeof fn === 'function') listeners.push(fn); }
+  function emit() {
+    for (var i = 0; i < listeners.length; i++) {
+      try { listeners[i](online, stockfishAvailable === true, lastCloud, stockfishAvailable); } catch (e) {}
+    }
+  }
+
+  function httpBase(url) {
+    var value = String(url || '').trim();
+    if (/^wss:\/\//i.test(value)) value = value.replace(/^wss:/i, 'https:');
+    else if (/^ws:\/\//i.test(value)) value = value.replace(/^ws:/i, 'http:');
+    else if (!/^https?:\/\//i.test(value) && value) value = 'https://' + value;
+    return value.replace(/\/+$/, '');
+  }
 
   function configure(url) {
-    serverUrl = String(url || '').replace(/\/$/, '');
-    wantCloud = !!serverUrl;
+    var next = httpBase(url);
+    if (next !== serverUrl) {
+      serverUrl = next;
+      stockfishAvailable = null;
+      serverReachable = null;
+      lastCloud = false;
+    }
     emit();
   }
 
   function configured() { return !!serverUrl; }
-  function useCloud() { return wantCloud && online && lastCloud; }
   function isOnline() { return online; }
+  function isServerReachable() { return serverReachable; }
+  function isStockfishAvailable() { return stockfishAvailable === true; }
+  function useCloud() { return online && isStockfishAvailable() && lastCloud; }
 
-  function setOnline(v) {
-    if (v === online) return;
-    online = v;
+  function setOnline(value) {
+    var next = !!value;
+    if (online === next) return;
+    online = next;
+    if (!online) { serverReachable = false; stockfishAvailable = false; lastCloud = false; }
     emit();
   }
 
-  /* ------------------------------------------------------ network detection */
-  if (typeof window !== 'undefined') {
-    window.addEventListener('online', function () { setOnline(true); });
-    window.addEventListener('offline', function () { setOnline(false); });
-    /* poll every 5s so a captive portal / dead wifi is detected */
-    setInterval(function () {
-      var probe = new XMLHttpRequest();
-      var t = setTimeout(function () { probe.abort(); setOnline(false); }, 3000);
-      probe.open('HEAD', serverUrl ? serverUrl + '/health' : '/health', true);
-      probe.onload = function () { clearTimeout(t); setOnline(probe.status < 500); };
-      probe.onerror = function () { clearTimeout(t); setOnline(false); };
-      probe.send();
-    }, 5000);
-  }
-
-  /* ------------------------------------------------------- cloud best move -- */
-  function cloudBestMove(fen, color, cb) {
-    if (!serverUrl) { return cb(new Error('no_server'), null); }
-    var xhr = new XMLHttpRequest();
-    var t = setTimeout(function () { xhr.abort(); cb(new Error('timeout'), null); }, 7000);
-    xhr.open('POST', serverUrl + '/stockfish', true);
-    xhr.setRequestHeader('content-type', 'application/json');
+  function checkHealth(cb) {
+    cb = typeof cb === 'function' ? cb : function () {};
+    if (!serverUrl) {
+      online = false; serverReachable = false; stockfishAvailable = false; emit();
+      cb(new Error('no_server'), null);
+      return;
+    }
+    var xhr = new XMLHttpRequest(), finished = false;
+    var timer = setTimeout(function () {
+      if (finished) return;
+      finished = true;
+      try { xhr.abort(); } catch (e) {}
+      online = false; serverReachable = false; stockfishAvailable = false; lastCloud = false; emit();
+      cb(new Error('health_timeout'), null);
+    }, 6000);
+    xhr.open('GET', serverUrl + '/health', true);
     xhr.onload = function () {
-      clearTimeout(t);
-      if (xhr.status === 200) {
-        try {
-          var j = JSON.parse(xhr.responseText || '{}');
-          lastCloud = true;
-          emit();
-          cb(null, j.bestmove || null);
-        } catch (e) { cb(new Error('bad_response'), null); }
-      } else {
-        lastCloud = false;
+      if (finished) return;
+      finished = true; clearTimeout(timer);
+      var health = null;
+      try { health = JSON.parse(xhr.responseText || '{}'); } catch (e) {}
+      if (xhr.status >= 200 && xhr.status < 300 && health && health.ok) {
+        online = true; serverReachable = true;
+        stockfishAvailable = health.stockfish === true;
         emit();
-        cb(new Error('status_' + xhr.status), null);
+        cb(null, health);
+      } else {
+        online = false; serverReachable = false; stockfishAvailable = false; lastCloud = false; emit();
+        cb(new Error('health_status_' + xhr.status), health);
       }
     };
     xhr.onerror = function () {
-      clearTimeout(t);
-      lastCloud = false;
-      emit();
-      cb(new Error('network'), null);
+      if (finished) return;
+      finished = true; clearTimeout(timer);
+      online = false; serverReachable = false; stockfishAvailable = false; lastCloud = false; emit();
+      cb(new Error('health_network'), null);
+    };
+    xhr.send();
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', function () {
+      if (serverUrl) checkHealth(); else setOnline(true);
+    });
+    window.addEventListener('offline', function () { setOnline(false); });
+    /* Capability is polled too: a running relay without Stockfish is not ready. */
+    setInterval(function () { if (serverUrl) checkHealth(); }, 15000);
+  }
+
+  function cloudBestMove(fen, color, cb) {
+    cb = typeof cb === 'function' ? cb : function () {};
+    if (!serverUrl) return cb(new Error('no_server'), null);
+    var xhr = new XMLHttpRequest(), finished = false;
+    var timer = setTimeout(function () {
+      if (finished) return;
+      finished = true;
+      try { xhr.abort(); } catch (e) {}
+      serverReachable = false; lastCloud = false; emit();
+      cb(new Error('stockfish_timeout'), null);
+    }, 15000);
+    xhr.open('POST', serverUrl + '/stockfish', true);
+    xhr.setRequestHeader('content-type', 'application/json');
+    xhr.onload = function () {
+      if (finished) return;
+      finished = true; clearTimeout(timer);
+      var result = {};
+      try { result = JSON.parse(xhr.responseText || '{}'); } catch (e) {}
+      if (xhr.status === 200 && typeof result.bestmove === 'string' && result.bestmove) {
+        online = true; serverReachable = true; stockfishAvailable = true; lastCloud = true; emit();
+        cb(null, result.bestmove, true);
+      } else {
+        serverReachable = true;
+        if (xhr.status === 503 && /stockfish_missing|stockfish_not_ready|no_stockfish_bin/.test(result.error || '')) {
+          stockfishAvailable = false;
+        }
+        lastCloud = false; emit();
+        cb(new Error(result.error || ('stockfish_http_' + xhr.status)), null, false);
+      }
+    };
+    xhr.onerror = function () {
+      if (finished) return;
+      finished = true; clearTimeout(timer);
+      online = false; serverReachable = false; lastCloud = false; emit();
+      cb(new Error('stockfish_network'), null, false);
     };
     xhr.send(JSON.stringify({ fen: fen, color: color }));
   }
 
-  /* ---------------------------------------------------- local best move ----- */
   function localBestMove(fen, color, bot, cb) {
-    lastCloud = false;
-    emit();
-    var g = new E.Chess(fen);
-    var b = bot || (BOTS && BOTS.byId && BOTS.byId('professor'));
-    var mv = AI.pickMove(g, b, []);
-    cb(null, mv ? E.algebraic(mv.from) + E.algebraic(mv.to) : null);
+    lastCloud = false; emit();
+    try {
+      var g = new E.Chess(fen);
+      var b = bot || (BOTS && BOTS.byId && BOTS.byId('professor'));
+      var mv = AI.pickMove(g, b, []);
+      cb(null, mv ? E.algebraic(mv.from) + E.algebraic(mv.to) : null, false);
+    } catch (e) { cb(e, null, false); }
   }
 
-  /** Get the engine's best move for a FEN.
-   * Tries the Voroa cloud (native Stockfish) when online; falls back to the
-   * local JS engine when offline or the cloud is unreachable. */
+  /* Legacy auto mode retained for integrations; the main app uses the explicit
+     cloudBestMove or local engine path so a VPS failure cannot masquerade as
+     a Stockfish game. */
   function getBestMove(fen, color, bot, cb) {
-    if (wantCloud && online) {
-      cloudBestMove(fen, color, function (err, move) {
-        if (!err && move) { cb(null, move, true); return; }
-        /* cloud failed: fall back to local */
-        localBestMove(fen, color, bot, function (e2, m2) { cb(e2, m2, false); });
+    if (serverUrl && online && isStockfishAvailable()) {
+      cloudBestMove(fen, color, function (err, move, cloud) {
+        if (!err && move) { cb(null, move, cloud); return; }
+        localBestMove(fen, color, bot, cb);
       });
-    } else {
-      localBestMove(fen, color, bot, cb);
-    }
+    } else localBestMove(fen, color, bot, cb);
   }
 
   var API = {
     configure: configure, configured: configured, isOnline: isOnline,
+    isStockfishAvailable: isStockfishAvailable, isServerReachable: isServerReachable,
+    checkHealth: checkHealth,
     useCloud: useCloud, onState: onState,
-    getBestMove: getBestMove, cloudBestMove: cloudBestMove, localBestMove: localBestMove,
+    getBestMove: getBestMove, cloudBestMove: cloudBestMove,
+    getStockfishMove: cloudBestMove, localBestMove: localBestMove,
+    httpBase: httpBase
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   root.Hybrid = API;

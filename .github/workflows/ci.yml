@@ -23,6 +23,9 @@ jobs:
       - name: Install test dependencies
         run: npm install --no-save jsdom
 
+      - name: Install relay dependency
+        run: npm install --prefix server --no-package-lock
+
       - name: Opening book is legal
         run: node tests/book_test.js
 
@@ -37,6 +40,16 @@ jobs:
 
       - name: Application behaviour
         run: node tests/app_test.js
+
+      - name: Android WebView tap routing
+        run: node tests/touch_test.js
+
+      - name: Explicit VPS Stockfish selection and availability
+        run: node tests/hybrid_test.js
+
+      - name: VPS Stockfish UCI and CORS integration
+        run: node tests/server_stockfish_test.js
+
       - name: Progression, backup and charts
         run: node tests/progress_test.js
 

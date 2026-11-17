@@ -8,8 +8,8 @@ WORK="/tmp/chessbuild"
 OUT="${1:-/home/user/Chess.apk}"
 
 KEYSTORE="$PROJ/release.keystore"
-STOREPASS="serenachess"
-ALIAS="chesskey"
+STOREPASS="${KEYSTORE_PASS:-serenachess}"
+ALIAS="${KEY_ALIAS:-chesskey}"
 
 if [ ! -d "$SDK/bt" ] || [ ! -d "$SDK/pf" ]; then
   echo ">> fetching Android build-tools + platform ..."

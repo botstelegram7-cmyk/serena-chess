@@ -45,8 +45,17 @@ body.light-bg { --text: #1c1b19; --muted: #5d5954;
   --panel: rgba(0,0,0,.05); --panel-2: rgba(0,0,0,.09);
   --panel-3: rgba(0,0,0,.15); --line: rgba(0,0,0,.10); }
 
-button, input { font-family: inherit; font-size: inherit; color: inherit; }
+button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
 button { background: none; border: none; cursor: pointer; }
+/* Make taps feel immediate in Android WebView without hijacking board drags
+   or the native keyboard behaviour of form fields. */
+button, a, [role="button"] { touch-action: manipulation; }
+button { -webkit-user-select: none; user-select: none; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible,
+textarea:focus-visible, [role="button"]:focus-visible {
+  outline: 2px solid var(--green); outline-offset: 2px;
+}
+button:not(:disabled):active { filter: brightness(1.12); }
 
 .ic { width: 22px; height: 22px; fill: none; stroke: currentColor;
       stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
@@ -258,8 +267,13 @@ button { background: none; border: none; cursor: pointer; }
 
 .player-strip { display: flex; align-items: center; gap: 10px; padding: 7px 12px; flex: none; }
 .player-meta { flex: 1; min-width: 0; }
-.player-name { font-weight: 700; font-size: 14.5px; display: flex; align-items: center; gap: 6px; }
+.player-name { font-weight: 700; font-size: 14.5px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .player-name .elo-tag { font-weight: 400; color: var(--muted); font-size: 12.5px; }
+.engine-tag { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 7px;
+  font-size: 9.5px; line-height: 1.4; letter-spacing: .02em; font-weight: 800;
+  background: rgba(129,182,76,.16); color: #a6d477; }
+.engine-tag.stockfish { background: rgba(81,166,216,.18); color: #84c9f1; }
+.engine-tag.error { background: rgba(205,83,72,.18); color: #f0958b; }
 .captured { display: flex; align-items: center; gap: 1px; height: 16px; margin-top: 2px;
             overflow: hidden; }
 .captured img { width: 14px; height: 14px; opacity: .85; }
@@ -606,6 +620,11 @@ body.light-bg .bs-text em { color: #6b655e; }
 .seg-btn { flex: 1; padding: 9px; border: 0; border-radius: 8px; background: none;
   color: var(--muted); font-size: 13.5px; font-weight: 700; cursor: pointer; }
 .seg-btn.active { background: var(--panel-3); color: #fff; }
+.engine-seg { margin-bottom: 8px; }
+.engine-choice-note { min-height: 18px; margin: 0 2px 14px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.engine-choice-note.ready { color: #a6d477; }
+.engine-choice-note.unavailable { color: #f0ad69; }
+.engine-choice-note.checking { color: #9bc6df; }
 
 .invite-card { margin-top: 16px; padding: 18px 16px; border-radius: var(--radius);
   background: var(--panel); border: 1px solid var(--line); text-align: center; }

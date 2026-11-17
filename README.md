@@ -68,6 +68,7 @@ a playing-style description, and a chat personality.
 ### Play
 
 - Pass and Play on one device
+- Choose a character from the built-in engine or play that opponent with VPS Stockfish; the game labels the active engine and never silently switches between them
 - Online matchmaking and private invites (see [Online play](#online-play))
 - 140 tactics puzzles and 12 endgame drills
 - Full time controls with real chess clocks, from bullet to unlimited

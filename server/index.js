@@ -233,46 +233,85 @@ function dequeue(ws) {
 
 /* ------------------------------------------------------- stockfish engine --
    Spawns a native Stockfish binary and answers "bestmove" for a FEN.
-   If STOCKFISH_BIN is not set or the binary is missing, the endpoint
-   returns 503 so the client falls back to its local JS engine. */
+   Missing or unready binaries return 503; the app surfaces the VPS failure
+   instead of silently claiming a local-engine move came from Stockfish. */
 const STOCKFISH_BIN = process.env.STOCKFISH_BIN || 'stockfish';
 let stockfishReady = false;
 
 function stockfishBestMove(fen, color, cb) {
-  if (!STOCKFISH_BIN) { return cb(new Error('no_stockfish_bin')); }
-  const proc = spawn(STOCKFISH_BIN, []);
-  proc.on('error', () => { cb(new Error('stockfish_missing')); });
-  let timedOut = false;
-  const timer = setTimeout(() => { timedOut = true; proc.kill(); cb(new Error('timeout')); }, 8000);
+  if (!STOCKFISH_BIN) return cb(new Error('no_stockfish_bin'));
+  if (typeof fen !== 'string' || fen.length > 256 || fen.trim().split(/\s+/).length < 4) {
+    return cb(new Error('bad_fen'));
+  }
 
-  let ready = false;
+  let proc;
+  let phase = 'uci';
   let output = '';
-  proc.stdout.on('data', (d) => { output += d.toString(); });
-  proc.stderr.on('data', () => {});
-  proc.on('close', (code) => {
+  let finished = false;
+  let timer;
+  const finish = (err, bestmove) => {
+    if (finished) return;
+    finished = true;
     clearTimeout(timer);
-    if (timedOut) return;
-    if (!ready) { return cb(new Error('stockfish_not_ready')); }
-    const m = output.match(/bestmove\s+([^\s]+)/);
-    cb(m ? null : new Error('no_bestmove'), m ? m[1] : null);
+    if (proc && proc.stdin && !proc.stdin.destroyed) {
+      try { proc.stdin.end('quit\n'); } catch (_) { try { proc.kill(); } catch (_) {} }
+    }
+    cb(err || null, bestmove || null);
+  };
+
+  try {
+    proc = spawn(STOCKFISH_BIN, [], { stdio: ['pipe', 'pipe', 'ignore'] });
+  } catch (e) {
+    return cb(new Error('stockfish_missing'));
+  }
+  timer = setTimeout(() => {
+    try { if (proc) proc.kill(); } catch (_) {}
+    finish(new Error('stockfish_timeout'));
+  }, 15000);
+
+  proc.on('error', () => finish(new Error('stockfish_missing')));
+  proc.on('close', () => {
+    if (!finished) finish(new Error('stockfish_closed'));
   });
-
-  const init = `uci\nsetoption name UCI_Chess960 value false\nposition fen ${fen}\ngo movetime 1000\n`;
-  proc.stdin.write(init);
-  proc.stdin.end();
-
-  /* wait for readyok */
-  const readyInt = setInterval(() => {
-    if (output.includes('readyok') || ready) { clearInterval(readyInt); ready = true; }
-  }, 50);
-  setTimeout(() => { clearInterval(readyInt); }, 2000);
+  proc.stdout.setEncoding('utf8');
+  proc.stdout.on('data', (chunk) => {
+    if (finished) return;
+    output = (output + chunk).slice(-12000);
+    if (phase === 'uci' && output.includes('uciok')) {
+      phase = 'ready';
+      proc.stdin.write('setoption name Threads value 1\nsetoption name Hash value 64\nisready\n');
+    }
+    if (phase === 'ready' && output.includes('readyok')) {
+      phase = 'search';
+      output = '';
+      proc.stdin.write(`position fen ${fen.trim()}\ngo movetime 1200\n`);
+    }
+    if (phase === 'search') {
+      const match = output.match(/\bbestmove\s+([a-h][1-8][a-h][1-8][qrbn]?|0000)\b/i);
+      if (match) {
+        if (match[1] === '0000') finish(new Error('no_legal_move'));
+        else finish(null, match[1].toLowerCase());
+      }
+    }
+  });
+  proc.stdin.write('uci\n');
 }
 
 /* ------------------------------------------------------------ http + ws --- */
 const server = http.createServer((req, res) => {
   const url = req.url;
   const base = url.split('?')[0];
-  const enableCors = { 'access-control-allow-origin': '*' };
+  const enableCors = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-methods': 'GET, POST, OPTIONS',
+    'access-control-allow-headers': 'content-type, authorization',
+  };
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, enableCors);
+    res.end();
+    return;
+  }
 
   if (base === '/health' || base === '/') {
     const body = JSON.stringify({
@@ -615,16 +654,42 @@ setInterval(() => {
   }
 }, 60000);
 
-/* detect stockfish binary availability at startup */
+/* Detect Stockfish at startup using the UCI handshake. `uci` only returns
+   uciok; `isready` is required before the server can advertise stockfish:true. */
 try {
-  const test = spawn(STOCKFISH_BIN, []);
-  let ready = false;
-  const t = setTimeout(() => { test.kill(); stockfishReady = ready; console.log('stockfish unavailable (no readyok)'); }, 1500);
-  test.stdout.on('data', (d) => { if (d.toString().includes('readyok')) ready = true; });
-  test.on('error', () => { stockfishReady = false; });
+  const test = spawn(STOCKFISH_BIN, [], { stdio: ['pipe', 'pipe', 'ignore'] });
+  let probePhase = 'uci';
+  let probeDone = false;
+  const probeTimer = setTimeout(() => {
+    if (probeDone) return;
+    probeDone = true; stockfishReady = false;
+    try { test.kill(); } catch (_) {}
+    console.log('stockfish unavailable (UCI handshake timed out)');
+  }, 4000);
+  test.stdout.setEncoding('utf8');
+  test.stdout.on('data', (chunk) => {
+    if (probeDone) return;
+    if (probePhase === 'uci' && chunk.includes('uciok')) {
+      probePhase = 'ready';
+      test.stdin.write('isready\n');
+    }
+    if (probePhase === 'ready' && chunk.includes('readyok')) {
+      probeDone = true; stockfishReady = true; clearTimeout(probeTimer);
+      console.log('stockfish ready');
+      try { test.stdin.end('quit\n'); } catch (_) { test.kill(); }
+    }
+  });
+  test.on('error', () => {
+    if (probeDone) return;
+    probeDone = true; stockfishReady = false; clearTimeout(probeTimer);
+    console.log('stockfish unavailable (binary not found)');
+  });
+  test.on('close', () => {
+    if (!probeDone) {
+      probeDone = true; stockfishReady = false; clearTimeout(probeTimer);
+    }
+  });
   test.stdin.write('uci\n');
-  test.stdin.end();
-  test.on('close', () => { clearTimeout(t); if (!ready) stockfishReady = false; });
 } catch (e) { stockfishReady = false; }
 
 server.listen(PORT, '0.0.0.0', () => {

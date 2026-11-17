@@ -5,10 +5,24 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '3.0';
-  var BUILD = 13;
+  var VERSION = '3.2';
+  var BUILD = 15;
 
   var LOG = [
+    { v: '3.2', date: '2026-11-17', title: 'Choose your chess engine', items: [
+      ['new', 'Choose each opponent’s built-in character engine or Stockfish running on your VPS. The game labels the active engine beside the opponent.'],
+      ['fix', 'VPS Stockfish games verify server readiness, validate returned legal moves, and pause with a Retry VPS control on errors instead of silently switching engines.'],
+      ['new', 'The supplied VPS URL is preconfigured; the app clearly reports when the server is reachable but Stockfish is not installed or ready.'],
+      ['note', 'Stockfish requires the updated server deployment with its native engine installed. Until then, the built-in app engine remains playable.']
+    ] },
+
+    { v: '3.1', date: '2026-11-17', title: 'Mobile controls fixed', items: [
+      ['fix', 'Android WebView taps now share the normal click path, so settings, theme pickers and dynamically built controls respond consistently.'],
+      ['fix', 'Board and puzzle-board gestures remain separate from UI taps; form fields retain native keyboard and focus behaviour.'],
+      ['new', 'Clearer pressed-state feedback and visible keyboard focus rings on interactive controls.'],
+      ['note', 'This release uses a new signing key because the original keystore and release signing secrets were not available. Users upgrading from v3.0 must uninstall it before installing v3.1. Future releases will keep using this new key.']
+    ] },
+
     { v: '1.9', date: '2026-10-02', items: [
       'Stronger opponents. The search wasted its work at the root, ignored check in quiescence, and searched losing captures in full. All three are fixed.',
       'The top opponents now see three to four moves deeper in the same thinking time, and win a 120-game match against the previous version by a wide margin.',

@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.2 — 2026-11-17
+
+### Choose your chess engine
+
+- Choose an opponent's built-in character engine or Stockfish running on your VPS; the game labels the active engine beside the opponent.
+- VPS Stockfish games verify server readiness, validate returned legal moves, and pause with a **Retry VPS** control on errors instead of silently switching engines.
+- The supplied VPS URL is preconfigured, and the app reports whether Stockfish is ready on the server.
+- Stockfish requires the updated server deployment with its native engine installed. The built-in app engine remains available if the VPS is not ready.
+
+## 3.1 — 2026-11-17
+
+### Reliable mobile touch controls
+
+- Android WebView taps now use the same click routing as desktop, including Settings, theme pickers and dynamically wired controls.
+- Board and puzzle-board gestures remain independent; form fields retain native keyboard and focus behaviour.
+- Added pressed-state feedback and visible keyboard focus rings.
+- **Signing note:** this release uses a new signing key because the original keystore and release secrets were not present. To install v3.1 over v3.0, uninstall v3.0 first. Future releases will use the new key.
+
 ## 3.0 — 2026-11-16
 
 ### Old UI Restored + Touch Fixed

@@ -1,12 +1,14 @@
 services:
   - type: web
     name: chess-relay
-    runtime: node
+    runtime: docker
     plan: free
     rootDir: server
-    buildCommand: npm install
-    startCommand: npm start
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /health
     envVars:
-      - key: NODE_VERSION
-        value: "20"
+      - key: PORT
+        value: "8080"
+      - key: STOCKFISH_BIN
+        value: "/usr/games/stockfish"

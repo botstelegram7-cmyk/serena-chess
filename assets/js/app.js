@@ -57,16 +57,14 @@
   var HY = window.Hybrid;
   var EC = window.Economy;
 
-  /* ── hybrid engine + economy init ─────────────────────────────────── */
-  if (HY) { HY.configure(settings.srvUrl || ''); HY.onState(function () { refreshHome(); }); }
-  if (EC) { EC.init(Store, profile); }
-
+  /* Load profile before modules that mutate or persist it. */
   var profile = Store.get('chess.profile', { name: '', color: AVATAR_COLORS[0], rating: 1200 });
   if (typeof profile.rating !== 'number') profile.rating = 1200;
   if (typeof profile.gold !== 'number') profile.gold = 200;
   if (!profile.items) profile.items = { board: ['classic'], piece: ['classic'], avatar: ['default'] };
   if (!profile.equipped) profile.equipped = { board: 'classic', piece: 'classic', avatar: 'default' };
-  if (EC) { EC.init(Store, profile); }
+
+  /* Settings must exist before Hybrid.configure reads the saved server URL. */
 
   /* ── gamified state (Duolingo-style) ────────────────────────────── */
   if (typeof profile.streak !== 'number') profile.streak = 0;
@@ -96,9 +94,20 @@
     preset: 'classic', board: 'green', piece: 'classic', bg: 'classic', sound: 'default',
     anim: true, coords: true, hints: true, last: true, autoq: false, tc: '10+0',
     chat: true, groqKey: CHAT.DEFAULT_KEY, notify: false, notifyAt: '19:00',
-    srvUrl: '', onlineHints: false, hintStyle: 'both', humanElo: 1200,
-    haptics: true, premove: true, googleClientId: ''
+    srvUrl: 'https://chess-9db1.onvoroa.com', onlineHints: false, hintStyle: 'both', humanElo: 1200,
+    engineMode: 'app', haptics: true, premove: true, googleClientId: ''
   }, Store.get('chess.settings', {}));
+  /* Older installs saved an empty relay URL as the default; use the user's
+     supplied VPS unless they enter a different address. */
+  if (!String(settings.srvUrl || '').trim()) settings.srvUrl = 'https://chess-9db1.onvoroa.com';
+  if (settings.engineMode !== 'stockfish') settings.engineMode = 'app';
+
+  /* ── hybrid engine + economy init ─────────────────────────────────── */
+  if (HY) {
+    HY.configure(settings.srvUrl || '');
+    HY.onState(function () { refreshHome(); refreshEngineChoiceStatus(); });
+  }
+  if (EC) { EC.init(Store, profile); }
 
   function saveProfile()  { Store.set('chess.profile', profile); }
   function saveStats()    { Store.set('chess.stats', stats); }
@@ -268,6 +277,7 @@
     hist: null,        // ChessReview.History — a FEN per ply, for < > navigation
     viewPly: null,     // null = watching live; a number = browsing history
     opp: null,         // online opponent { name, rating }
+    engineSource: 'app', engineError: null,
     startedAt: 0
   };
   var board = null;
@@ -505,9 +515,12 @@
   }
 
   /* ──────────────────────────────────────────────────── start games ─── */
-  function startGame(mode, bot, myColor, tcId, fen) {
+  function startGame(mode, bot, myColor, tcId, fen, engineMode) {
     G.game = fen ? new E.Chess(fen) : new E.Chess();
     G.mode = mode; G.bot = bot || null;
+    G.engineSource = (mode === 'bot' && bot && !bot.human &&
+      (engineMode || settings.engineMode) === 'stockfish') ? 'stockfish' : 'app';
+    G.engineError = null;
     G.myColor = (myColor === undefined) ? E.WHITE : myColor;
     G.moves = []; G.over = false; G.thinking = false; G.awaitingPromo = null;
     G.tc = T.timeControl(tcId || settings.tc);
@@ -569,6 +582,14 @@
         var tag = document.createElement('span');
         tag.className = 'elo-tag'; tag.textContent = '(' + G.bot.elo + ')';
         nameEl.appendChild(tag);
+        if (!G.bot.human) {
+          var engineTag = document.createElement('span');
+          engineTag.className = 'engine-tag' + (G.engineSource === 'stockfish' ? ' stockfish' : '') +
+                                (G.engineError ? ' error' : '');
+          engineTag.textContent = G.engineError ? 'VPS paused'
+            : (G.engineSource === 'stockfish' ? 'VPS Stockfish' : 'App engine');
+          nameEl.appendChild(engineTag);
+        }
       } else if (G.mode === 'online') {
         var t2 = document.createElement('span');
         t2.className = 'elo-tag';
@@ -783,7 +804,29 @@
     }
   }
 
+  function engineMoveFromReply(g, reply) {
+    var text = String(reply || '').trim().split(/\s+/)[0];
+    var uci = /^([a-h][1-8])([a-h][1-8])([qrbn])?$/i.exec(text);
+    var legal = g.moves();
+    if (uci) {
+      var from = E.fromAlgebraic(uci[1].toLowerCase());
+      var to = E.fromAlgebraic(uci[2].toLowerCase());
+      var promo = uci[3] ? ({ q: E.QUEEN, r: E.ROOK, b: E.BISHOP, n: E.KNIGHT }[uci[3].toLowerCase()]) : 0;
+      for (var i = 0; i < legal.length; i++) {
+        if (legal[i].from !== from || legal[i].to !== to) continue;
+        if (promo ? legal[i].promo === promo : !legal[i].promo) return legal[i];
+      }
+      return null;
+    }
+    var san = text.replace(/[+#!?]/g, '');
+    for (var j = 0; j < legal.length; j++) {
+      if (g.moveToSan(legal[j], legal).replace(/[+#!?]/g, '') === san) return legal[j];
+    }
+    return null;
+  }
+
   function scheduleBot() {
+    if (G.over || !G.game || !G.bot) return;
     G.thinking = true;
     $('#top-thinking').hidden = false;
     updateBar();
@@ -795,62 +838,75 @@
       var last = G.moves.length ? G.moves[G.moves.length - 1] : null;
       if (G.bot && G.bot.human) {
         G.bot.lastTo = last ? last.to : -1;
-        G.bot.msLeft = botClockMs();     /* lets the model feel the clock */
+        G.bot.msLeft = botClockMs();
       }
 
-      /* The search yields between slices rather than holding the thread for
-         its whole budget, so the clock keeps ticking, animations keep running
-         and taps keep landing while a bot thinks.
-
-         Hybrid mode: when online vs a bot, ask the Voroa backend (native
-         Stockfish) for the best move. When offline or the cloud is down, fall
-         back to the bundled JS engine. */
       var fen = g.fen(), color = g.turn;
-      if (HY && HY.configured() && HY.isOnline() && G.mode === 'bot' && !G.bot.human) {
-        HY.getBestMove(fen, color, G.bot, function (err, moveSan, cloud) {
+      if (G.mode === 'bot' && !G.bot.human && G.engineSource === 'stockfish') {
+        if (!HY || !HY.configured()) {
+          toast('No VPS server set. Falling back to App engine.', 3000);
+          G.engineSource = 'app';
+        }
+        HY.getStockfishMove(fen, color, function (err, reply) {
           G.search = null;
-          var mv = null;
-          if (moveSan) {
-            var legal = g.moves();
-            for (var li = 0; li < legal.length; li++) {
-              var s = g.moveToSan(legal[li], legal).replace(/[+#!?]/g, '');
-              if (s === moveSan.replace(/[+#!?]/g, '')) { mv = legal[li]; break; }
-            }
+          var mv = err ? null : engineMoveFromReply(g, reply);
+          if (err || !mv) {
+            /* VPS Stockfish is missing or unreachable — fall back to local App engine
+               so the game never gets stuck waiting for a server that has no Stockfish. */
+            G.engineSource = 'app';
+            G.engineError = null;
+            $('#top-thinking').hidden = false;
+            toast('VPS Stockfish not available on this server. Using App engine.', 3500);
+            G.search = AI.pickMoveAsync(g, G.bot, hist, function (localMv) {
+              G.search = null;
+              if (!localMv) { try { localMv = g.moves()[0] || null; } catch (e2) { localMv = null; } }
+              var want = 300;
+              if (G.bot && G.bot.human) {
+                var forced = g.moves().length <= 2 ||
+                             (last && localMv && localMv.to === last.to && (localMv.flags & E.FLAG_CAPTURE));
+                want = HU.thinkMs(g, G.bot, forced);
+              }
+              setTimeout(function () {
+                $('#top-thinking').hidden = true;
+                G.thinking = false;
+                renderPlayers(); updateBar();
+                applyMove(localMv, false);
+              }, want);
+            });
+            return;
           }
-          if (!mv) { try { mv = g.moves()[0] || null; } catch (e2) { mv = null; } }
-          var want = 300;
-          var pause = Math.max(0, want - (Date.now() - started));
+          var pause = Math.max(0, 320 - (Date.now() - started));
           setTimeout(function () {
             $('#top-thinking').hidden = true;
             G.thinking = false;
+            G.engineError = null;
             if (G.over) return;
-            if (!mv) { finishGame(g.status()); return; }
+            renderPlayers(); updateBar();
             applyMove(mv, false);
           }, pause);
         });
-      } else {
-        G.search = AI.pickMoveAsync(g, G.bot, hist, function (mv) {
-          G.search = null;
-          if (!mv) { try { mv = g.moves()[0] || null; } catch (e2) { mv = null; } }
-
-          /* A person does not answer in a constant 300 ms. Forced recaptures come
-             back instantly, hard positions get a long stare. */
-          var want = 300;
-          if (G.bot && G.bot.human) {
-            var forced = g.moves().length <= 2 ||
-                         (last && mv && mv.to === last.to && (mv.flags & E.FLAG_CAPTURE));
-            want = HU.thinkMs(g, G.bot, forced);
-          }
-          var pause = Math.max(0, want - (Date.now() - started));
-          setTimeout(function () {
-            $('#top-thinking').hidden = true;
-            G.thinking = false;
-            if (G.over) return;
-            if (!mv) { finishGame(g.status()); return; }
-            applyMove(mv, false);
-          }, pause);
-        });
+        return;
       }
+
+      /* Built-in engine mode: retain each character's own strength and style. */
+      G.search = AI.pickMoveAsync(g, G.bot, hist, function (mv) {
+        G.search = null;
+        if (!mv) { try { mv = g.moves()[0] || null; } catch (e2) { mv = null; } }
+        var want = 300;
+        if (G.bot && G.bot.human) {
+          var forced = g.moves().length <= 2 ||
+                       (last && mv && mv.to === last.to && (mv.flags & E.FLAG_CAPTURE));
+          want = HU.thinkMs(g, G.bot, forced);
+        }
+        var pause = Math.max(0, want - (Date.now() - started));
+        setTimeout(function () {
+          $('#top-thinking').hidden = true;
+          G.thinking = false;
+          if (G.over) return;
+          if (!mv) { finishGame(g.status()); return; }
+          applyMove(mv, false);
+        }, pause);
+      });
     }, 40);
   }
 
@@ -1066,6 +1122,9 @@
       } else if (a === 'newgame') {
         b.hidden = online;
         b.disabled = false;
+      } else if (a === 'engine-retry') {
+        b.hidden = !G.engineError;
+        b.disabled = !G.engineError || G.over || G.thinking;
       } else b.disabled = false;
     });
     updateNav();
@@ -1078,6 +1137,7 @@
       fen: G.game.fen(), startFen: G.hist ? G.hist.startFen : null,
       mode: G.mode, botId: G.bot ? G.bot.id : null,
       humanElo: (G.bot && G.bot.human) ? G.bot.elo : null,
+      engineMode: G.engineSource,
       myColor: G.myColor, moves: G.moves.map(function (m) { return m.san; }),
       ply: G.moves.length, tc: G.tc ? G.tc.id : 'unlimited',
       ms: Clock.on ? Clock.ms.slice() : null
@@ -1484,10 +1544,12 @@
     if ($('#daily-streak-val')) $('#daily-streak-val').textContent = profile.streak;
     if ($('#daily-reward')) $('#daily-reward').textContent = '+' + (10 + profile.streak);
 
-    renderPathNodes($('#path-row'), 'home');
+    var pathHost = $('#path-row');
+    if (pathHost) renderPathNodes(pathHost, 'home');
   }
 
   function renderPathNodes(container, ctx) {
+    if (!container) return;  // older/minimal home layouts may omit the lesson-path rail
     container.innerHTML = '';
     PATH.forEach(function (node, i) {
       var done = pathState.completed.indexOf(node.id) >= 0;
@@ -1748,6 +1810,86 @@
 
   /* ──────────────────────────────────────────────── bot sheet + time ─── */
   var pendingBot = null;
+  var pendingEngine = settings.engineMode;
+  var pendingBotStart = false;
+
+  function paintEngineChoice() {
+    $$('#seg-engine [data-engine-mode]').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.engineMode === pendingEngine);
+    });
+    var note = $('#engine-choice-note');
+    if (!note) return;
+    note.className = 'engine-choice-note';
+    if (pendingEngine !== 'stockfish') {
+      note.textContent = 'Uses the app’s character engine. Each opponent keeps its own rating and style.';
+      return;
+    }
+    if (!HY || !HY.configured()) {
+      note.classList.add('unavailable');
+      note.textContent = 'Add your VPS URL in Settings → Relay server URL to use Stockfish.';
+    } else if (HY.isStockfishAvailable()) {
+      note.classList.add('ready');
+      note.textContent = 'VPS Stockfish ready · moves will be computed by your server.';
+    } else if (HY.isServerReachable && HY.isServerReachable() === true) {
+      note.classList.add('unavailable');
+      note.textContent = 'VPS is reachable, but Stockfish is not installed or ready on the server.';
+    } else if (HY.isServerReachable && HY.isServerReachable() === false) {
+      note.classList.add('unavailable');
+      note.textContent = 'Cannot reach the VPS. Check the URL or network, then retry.';
+    } else {
+      note.classList.add('checking');
+      note.textContent = 'Checking the VPS Stockfish engine…';
+    }
+  }
+
+  function refreshEngineChoiceStatus() {
+    if (pendingEngine === 'stockfish') paintEngineChoice();
+  }
+
+  function probeStockfishForSheet(callback) {
+    if (!HY || !HY.configured()) {
+      paintEngineChoice();
+      if (callback) callback(new Error('no_server'), null);
+      return;
+    }
+    var note = $('#engine-choice-note');
+    if (note) {
+      note.className = 'engine-choice-note checking';
+      note.textContent = 'Checking the VPS Stockfish engine…';
+    }
+    HY.checkHealth(function (err, health) {
+      if (pendingEngine === 'stockfish') paintEngineChoice();
+      if (callback) callback(err, health);
+    });
+  }
+
+  function chooseEngine(mode) {
+    pendingEngine = mode === 'stockfish' ? 'stockfish' : 'app';
+    settings.engineMode = pendingEngine;
+    saveSettings();
+    paintEngineChoice();
+    if (pendingEngine === 'stockfish') probeStockfishForSheet();
+  }
+
+  function startPendingBot(color) {
+    if (!pendingBot || pendingBotStart) return;
+    if (pendingEngine !== 'stockfish') {
+      closeSheets();
+      startGame('bot', pendingBot, color, settings.tc, null, 'app');
+      return;
+    }
+    pendingBotStart = true;
+    probeStockfishForSheet(function (err, health) {
+      pendingBotStart = false;
+      if (pendingEngine !== 'stockfish') return;
+      if (err || !health || health.stockfish !== true) {
+        toast('VPS Stockfish is not ready. See the engine status in this sheet.');
+        return;
+      }
+      closeSheets();
+      startGame('bot', pendingBot, color, settings.tc, null, 'stockfish');
+    });
+  }
 
   function buildTimeControls(sel) {
     var wrap = $(sel || '#tc-wrap');
@@ -1821,6 +1963,10 @@
 
   function openBotSheet(b) {
     pendingBot = b;
+    pendingBotStart = false;
+    pendingEngine = settings.engineMode === 'stockfish' ? 'stockfish' : 'app';
+    paintEngineChoice();
+    if (pendingEngine === 'stockfish') probeStockfishForSheet();
     $('#sheet-img').src = b.avatar;
     $('#sheet-name').textContent = b.name;
     $('#sheet-title').textContent = b.title + ' · ' + b.series;
@@ -1926,12 +2072,13 @@
   var botSheet = $('#bot-sheet');
   if (botSheet) {
     botSheet.addEventListener('click', function (e) {
+      var engineButton = e.target.closest('[data-engine-mode]');
+      if (engineButton) { chooseEngine(engineButton.dataset.engineMode); return; }
       var b = e.target.closest('[data-side]');
       if (!b || !pendingBot) return;
       var s = b.dataset.side;
       var color = s === 'w' ? E.WHITE : (s === 'b' ? E.BLACK : (Math.random() < 0.5 ? E.WHITE : E.BLACK));
-      closeSheets();
-      startGame('bot', pendingBot, color, settings.tc);
+      startPendingBot(color);
     });
   }
 
@@ -2356,7 +2503,7 @@
                       '<span class="lvl ' + d.level + '">' + d.level + '</span>';
       row.addEventListener('click', function () {
         var side = d.fen.split(' ')[1] === 'b' ? E.BLACK : E.WHITE;
-        startGame('bot', BOTS.byId('kovacs'), side, 'unlimited', d.fen);
+        startGame('bot', BOTS.byId('kovacs'), side, 'unlimited', d.fen, 'app');
         $('#game-title').textContent = d.name;
         toast(d.goal, 3400);
       });
@@ -2415,7 +2562,58 @@
     });
   }
 
+  /* Touch input in older Android WebViews is inconsistent: an inline
+     touchend handler can prevent the browser from producing its follow-up
+     click, and the old workaround only knew how to route a subset of app
+     actions. Replay a tap as an ordinary click instead. That lets every
+     existing listener (settings, theme pickers, sheets, navigation, etc.)
+     share the exact same path. Board gestures stay owned by ChessUI.Board. */
+  var lastTouchActionAt = 0;
+  var touchStart = null;
+  var touchMoved = false;
+  var multiTouch = false;
+
+  document.addEventListener('touchstart', function (e) {
+    multiTouch = !e.touches || e.touches.length !== 1;
+    touchMoved = false;
+    if (!multiTouch && e.touches[0]) {
+      touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else {
+      touchStart = null;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function (e) {
+    if (!touchStart || !e.touches || !e.touches[0]) return;
+    var dx = e.touches[0].clientX - touchStart.x;
+    var dy = e.touches[0].clientY - touchStart.y;
+    if (Math.abs(dx) + Math.abs(dy) > 10) touchMoved = true;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function (e) {
+    var start = touchStart;
+    var moved = touchMoved || multiTouch;
+    touchStart = null;
+    touchMoved = false;
+    multiTouch = false;
+
+    if (moved || !start || !e.target || !e.target.closest) return;
+    if (e.target.closest('#board, #puzzle-board')) return;
+    /* Native focus/keyboard/selection behaviour is important for form fields. */
+    if (e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (e.target.closest('button:disabled, [aria-disabled="true"]')) return;
+
+    var click = new MouseEvent('click', {
+      bubbles: true, cancelable: true, view: window, detail: 1
+    });
+    Object.defineProperty(click, '__touchReplay', { value: true });
+    lastTouchActionAt = Date.now();
+    if (e.cancelable) e.preventDefault();
+    e.target.dispatchEvent(click);
+  }, { passive: false });
+
   document.addEventListener('click', function (e) {
+    if (!e.__touchReplay && Date.now() - lastTouchActionAt < 750) return;
     /* ---- move navigation: < > |< >| and tapping a move in the bar ---- */
     var navEl = e.target.closest('[data-nav]');
     if (navEl && !navEl.disabled) {
@@ -2451,7 +2649,7 @@
     if (a === 'continue-lesson') { go('learn'); return; }
     if (a === 'ladder-play') {
       var lb = BOTS.byId(act.dataset.bot);
-      if (lb) startGame('bot', lb, E.WHITE, settings.tc);
+      if (lb) startGame('bot', lb, E.WHITE, settings.tc, null, 'app');
       return;
     }
     if (a === 'backup-export')  { exportBackup(); return; }
@@ -2552,6 +2750,15 @@
       return;
     }
 
+    if (a === 'engine-retry') {
+      if (!G.engineError || G.over || G.engineSource !== 'stockfish') return;
+      G.engineError = null;
+      renderPlayers(); updateBar();
+      Clock.start(G.game.turn);
+      scheduleBot();
+      return;
+    }
+
     if (a === 'play-local') startGame('local', null, E.WHITE, settings.tc);
 
     else if (a === 'resume') {
@@ -2584,7 +2791,7 @@
 
     else if (a === 'rematch') {
       $('#board-overlay').hidden = true;
-      if (G.mode === 'bot') startGame('bot', G.bot, G.myColor ^ 1, G.tc.id);
+      if (G.mode === 'bot') startGame('bot', G.bot, G.myColor ^ 1, G.tc.id, null, G.engineSource);
       else startGame('local', null, E.WHITE, G.tc.id);
     }
 
@@ -2670,6 +2877,8 @@
     G.mode = saved.mode;
     G.bot = saved.botId === 'human' ? makeHuman(saved.humanElo || settings.humanElo)
           : saved.botId ? BOTS.byId(saved.botId) : null;
+    G.engineSource = (saved.engineMode === 'stockfish' && G.bot && !G.bot.human) ? 'stockfish' : 'app';
+    G.engineError = null;
     G.myColor = saved.myColor;
     G.hist = RV.History.fromSan(saved.moves || [], saved.startFen || null);
     G.moves = G.hist.moves.map(function (m) { return { san: m.san, from: m.from, to: m.to }; });
@@ -2717,9 +2926,18 @@
         settings.srvUrl = url.value.trim();
         saveSettings();
         ON.configure(settings.srvUrl);
+        if (HY) HY.configure(settings.srvUrl);
         syncServerWarn();
         $('#srv-status').textContent = settings.srvUrl
           ? 'Will connect to ' + ON.normalise(settings.srvUrl) : '';
+        if (HY && settings.srvUrl) {
+          HY.checkHealth(function (err, health) {
+            if (err) $('#srv-status').textContent = 'Relay not reachable. Check the address and try again.';
+            else $('#srv-status').textContent = health.stockfish
+              ? 'Connected · Online play and VPS Stockfish are ready.'
+              : 'Online relay connected, but Stockfish is not installed on the VPS.';
+          });
+        }
       });
     }
 
@@ -2740,9 +2958,18 @@
       }, 20000);
       probe.onopen = function () {
         done = true; clearTimeout(timer);
-        $('#srv-status').textContent = 'Connected. Online play is ready.';
+        $('#srv-status').textContent = 'Relay connected. Checking Stockfish…';
         try { probe.close(); } catch (e) {}
         ON.configure(raw); syncServerWarn();
+        if (HY) {
+          HY.configure(raw);
+          HY.checkHealth(function (err, health) {
+            if (err) $('#srv-status').textContent = 'WebSocket connected, but the HTTP health check failed.';
+            else $('#srv-status').textContent = health.stockfish
+              ? 'Connected · Online play and VPS Stockfish are ready.'
+              : 'Online relay connected, but Stockfish is not installed on the VPS.';
+          });
+        }
       };
       probe.onerror = function () {
         if (done) return; done = true; clearTimeout(timer);
@@ -2793,7 +3020,8 @@
   if (typeof window !== 'undefined') {
     window.__G = G; window.__apply = applyMove; window.__navTo = navTo;
     window.__start = startGame; window.__finish = finishGame; window.__RV = RV;
-    window.__remote = applyRemote;
+    window.__remote = applyRemote; window.__engineMoveFromReply = engineMoveFromReply;
+    window.__Clock = Clock;
   }
 
   /* ────────────────────────────────────────────────── what's new ───

@@ -7,6 +7,8 @@ const { JSDOM } = require('jsdom');
 const dom = new JSDOM(fs.readFileSync(P+'index.html','utf8'), { runScripts:'outside-only', pretendToBeVisual:true, url:'http://localhost/' });
 const w = dom.window;
 w.WebSocket = function(){ this.readyState=0; this.close=()=>{}; this.send=()=>{}; };
+w.XMLHttpRequest = function(){ this.open=(_method,url)=>{this.url=url;}; this.setRequestHeader=()=>{}; this.abort=()=>{}; this.send=()=>{ setTimeout(()=>{this.status=200; this.responseText='{"ok":true,"stockfish":false}'; if(this.onload)this.onload();},1); }; };
+w.localStorage.setItem('chess.settings', JSON.stringify({ srvUrl:'' }));
 w.matchMedia = () => ({matches:false, addListener(){}, removeListener(){}});
 w.HTMLMediaElement.prototype.play = () => Promise.resolve();
 w.HTMLMediaElement.prototype.pause = () => {};
@@ -14,13 +16,24 @@ w.HTMLMediaElement.prototype.load = () => {};
 for (const [k,v] of [['offsetLeft',0],['offsetWidth',10],['clientWidth',100]])
   Object.defineProperty(w.HTMLElement.prototype, k, { get(){ return v } });
 
-for (const f of ['engine','themes','bots','puzzles','openings','ai','human','changelog','progress','account','charts','review','online','ui','chat','app'])
+for (const f of ['engine','themes','bots','puzzles','openings','ai','human','changelog','progress','account','charts','review','online','hybrid','ui','chat','app'])
   w.eval(fs.readFileSync(P+'js/'+f+'.js','utf8'));
 w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
 
 const $ = s => w.document.querySelector(s);
 const click = el => el && el.dispatchEvent(new w.MouseEvent('click',{bubbles:true}));
+const tap = el => {
+  if (!el) return;
+  const fire = (type, touches) => {
+    const ev = new w.Event(type, { bubbles:true, cancelable:true });
+    Object.defineProperty(ev, 'touches', { value:touches });
+    el.dispatchEvent(ev);
+  };
+  fire('touchstart', [{ clientX:12, clientY:18 }]);
+  fire('touchend', []);
+};
 const E = w.ChessEngine, G = w.__G;
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
 let fails = 0;
 const ok = (name, cond, extra='') => { console.log(`  ${cond?'PASS':'FAIL'}  ${name}${extra?' — '+extra:''}`); if(!cond) fails++; };
 
@@ -30,11 +43,61 @@ ok('11 scripts loaded', true);
 ok('6 mode cards on home', w.document.querySelectorAll('.mode-card').length === 6);
 ok('rating shown', $('#me-rating').textContent === '1200');
 ok('online + friends + review screens exist', !!$('#screen-online') && !!$('#screen-friends') && !!$('#screen-review'));
+const uciGame = new E.Chess();
+const uciE4 = w.__engineMoveFromReply(uciGame, 'e2e4');
+ok('VPS UCI bestmove is mapped to the actual legal move', !!uciE4 && uciGame.moveToSan(uciE4) === 'e4');
+
+console.log('\n── Android WebView touch routing ──');
+tap($('[data-go="settings"]'));
+ok('touch navigates to Settings', $('#screen-settings').classList.contains('active'));
+const secondPreset = w.document.querySelectorAll('.preset-cell')[1];
+tap(secondPreset);
+ok('touch activates a dynamically wired theme option', !!w.document.querySelectorAll('.preset-cell')[1] && w.document.querySelectorAll('.preset-cell')[1].classList.contains('sel'));
+tap($('#screen-settings [data-go="home"]'));
+ok('touch returns home', $('#screen-home').classList.contains('active'));
+tap($('[data-go="bots"]'));
+const firstBot = w.document.querySelectorAll('.bot-card')[1];
+tap(firstBot);
+ok('bot sheet offers engine selection', !!$('#bot-sheet [data-engine-mode="stockfish"]'));
+tap($('#bot-sheet [data-engine-mode="stockfish"]'));
+ok('Stockfish option is configured to the supplied VPS by default', w.Hybrid.configured());
+await sleep(5);
+ok('Stockfish status distinguishes reachable VPS from missing engine', /Stockfish is not installed or ready/i.test($('#engine-choice-note').textContent));
+tap($('#bot-sheet [data-engine-mode="app"]'));
+tap($('#bot-sheet [data-side="w"]'));
+ok('App engine choice starts an app-engine match', G.mode === 'bot' && G.engineSource === 'app');
+ok('app-engine source is shown beside the opponent', !!w.document.querySelector('.engine-tag:not(.stockfish)'));
+tap($('#screen-game [data-action="leave-game"]'));
+
+console.log('\n── VPS failure auto-falls back to App engine ──');
+w.Hybrid.configure('https://stockfish.test.invalid');
+let vpsCalls = 0;
+w.Hybrid.getStockfishMove = function (_fen, _color, cb) {
+  vpsCalls++;
+  cb(new Error('stockfish_test_failure'), null);
+};
+/* Mock pickMoveAsync to return instantly for the test */
+let pickMoveAsyncCalls = 0;
+w.ChessAI.pickMoveAsync = function (game, bot, sanHistory, cb) {
+  pickMoveAsyncCalls++;
+  var legal = game.moves();
+  var mv = legal.length ? legal[0] : null;
+  setTimeout(function () { cb(mv); }, 10);
+};
+w.__start('bot', w.ChessBots.BOTS[0], E.BLACK, '10+0', null, 'stockfish');
+await sleep(1000);
+ok('VPS Stockfish failure auto-falls back to App engine',
+   G.engineSource === 'app' && G.engineError === null &&
+   G.moves.length === 1 && !!w.__Clock.timer);
+ok('No Retry VPS button shown when auto-fallback is active', $('#engine-retry').hidden);
+ok('App engine made a move after VPS failure', G.moves.length === 1);
+ok('pickMoveAsync was called after VPS failure', pickMoveAsyncCalls === 1);
+tap($('#screen-game [data-action="leave-game"]'));
+w.__Clock.stop();
 
 console.log('\n── start a bot game, play 8 plies ──');
 w.__start('local', null, E.WHITE, '10+0');   // Pass & Play: the test drives both sides
 ok('game screen active', $('#screen-game').classList.contains('active'));
-const sleep = ms => new Promise(r=>setTimeout(r,ms));
 const play = async (a,b) => {
   const from=E.fromAlgebraic(a), to=E.fromAlgebraic(b);
   const m = G.game.movesFrom(from).filter(x=>x.to===to)[0];

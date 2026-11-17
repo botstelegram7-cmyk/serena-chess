@@ -81,4 +81,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v') && steps.signing.outputs.signed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$GITHUB_REF_NAME" Chess.apk --clobber
+        run: |
+          APK_NAME="serena-chess-${GITHUB_REF_NAME}.apk"
+          cp Chess.apk "$APK_NAME"
+          gh release upload "$GITHUB_REF_NAME" "$APK_NAME" --clobber
