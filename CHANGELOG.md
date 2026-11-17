@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.3 — 2026-11-01
+
+### Modern dark space-gradient UI
+
+- New hero section with Continue Learning call-to-action
+- Glassmorphism cards with vibrant mode colors (indigo/purple/green/amber)
+- Stat grid and updated avatars/buttons/sheets to match
+- All home screen buttons respond to touch with inline ontouchend handlers
+- VPS Stockfish auto-fallback to local engine on failure
+
 ## 3.2 — 2026-11-17
 
 ### Choose your chess engine
