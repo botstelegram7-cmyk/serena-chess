@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.4 — 2026-11-01
+
+### Mistouch prevention & professional UI
+
+- Scroll-aware tap guard: accidental taps while scrolling no longer launch games
+- Native `touch-action: pan-y` scrolling on home screen for smooth WebView scrolling
+- Stronger glassmorphism cards with colored top borders per mode
+- Refined hero section with depth overlay and smoother CTA button
+- Section labels with accent indicators, improved stat grid with active states
+- All home screen buttons respond to touch with inline ontouchend handlers
+- VPS Stockfish auto-fallback to local engine on failure
+
 ## 3.3 — 2026-11-01
 
 ### Modern dark space-gradient UI

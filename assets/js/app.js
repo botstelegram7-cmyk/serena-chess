@@ -2569,9 +2569,21 @@
      existing listener (settings, theme pickers, sheets, navigation, etc.)
      share the exact same path. Board gestures stay owned by ChessUI.Board. */
   var lastTouchActionAt = 0;
+  var lastScrollAt = 0;
   var touchStart = null;
   var touchMoved = false;
   var multiTouch = false;
+
+  /* Guard against mistaps while scrolling: when the home scroll container
+     has scrolled recently, suppress tap-to-click for a short window so an
+     accidental lift near a mode card doesn't launch a game. */
+  function guardScrollMistaps() {
+    var homeScroll = $('#screen-home .scroll');
+    if (!homeScroll) return;
+    homeScroll.addEventListener('scroll', function () {
+      lastScrollAt = Date.now();
+    }, { passive: true });
+  }
 
   document.addEventListener('touchstart', function (e) {
     multiTouch = !e.touches || e.touches.length !== 1;
@@ -2598,6 +2610,7 @@
     multiTouch = false;
 
     if (moved || !start || !e.target || !e.target.closest) return;
+    if (Date.now() - lastScrollAt < 150) return; /* scrolling just happened — ignore tap */
     if (e.target.closest('#board, #puzzle-board')) return;
     /* Native focus/keyboard/selection behaviour is important for form fields. */
     if (e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
@@ -2614,6 +2627,7 @@
 
   document.addEventListener('click', function (e) {
     if (!e.__touchReplay && Date.now() - lastTouchActionAt < 750) return;
+    if (Date.now() - lastScrollAt < 150) return; /* scrolling just happened — ignore tap */
     /* ---- move navigation: < > |< >| and tapping a move in the bar ---- */
     var navEl = e.target.closest('[data-nav]');
     if (navEl && !navEl.disabled) {
@@ -3012,6 +3026,7 @@
     }
     syncServerWarn();
     setTimeout(refreshAiNudge, 4000);
+    guardScrollMistaps();
     document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   }
 
