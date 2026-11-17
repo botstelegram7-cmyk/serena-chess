@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.5 — 2026-11-01
+
+### Time & color selection fixed, default VPS updated
+
+- Time control chips now select correctly in bot and human opponent sheets
+- Play-as color buttons (White / Random / Black) show selection state and start the game
+- Default VPS relay updated to https://chessapp.onvoroa.com/
+- Scroll-aware tap guard: accidental taps while scrolling no longer launch games
+- Professional styling for time chips and side buttons with active states
+- Engine segment (App engine / Stockfish VPS) works in bot sheet
+
 ## 3.4 — 2026-11-01
 
 ### Mistouch prevention & professional UI

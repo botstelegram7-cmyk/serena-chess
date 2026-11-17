@@ -336,7 +336,7 @@ button:not(:disabled):active { filter: brightness(0.92); }
 
 /* ───────────────────────────────────────────────────────── sheets ─── */
 .sheet-scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 90; backdrop-filter: blur(4px); }
-.sheet { position: fixed; left: 0; right: 0; bottom: 0; background: #0f172a; border-radius: 20px 20px 0 0; z-index: 100; padding-bottom: var(--safe-bottom); animation: rise 0.28s cubic-bezier(0.2,0.8,0.3,1); max-height: 90vh; overflow-y: auto; color: #f1f5f9; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; background: #0f172a; border-radius: 20px 20px 0 0; z-index: 100; padding-bottom: var(--safe-bottom); animation: rise 0.28s cubic-bezier(0.2,0.8,0.3,1); max-height: 90vh; overflow-y: auto; color: #f1f5f9; touch-action: manipulation; }
 @keyframes rise { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .sheet-handle { width: 40px; height: 5px; border-radius: 2.5px; background: #475569; margin: 10px auto 6px; }
 .sheet-body { padding: 10px 16px 24px; }
@@ -476,6 +476,36 @@ button:not(:disabled):active { filter: brightness(0.92); }
 .engine-choice-note.ready { color: #86efac; }
 .engine-choice-note.unavailable { color: #fca5a5; }
 .engine-choice-note.checking { color: #93c5fd; }
+
+/* ─── Time control chips ─── */
+.tc-wrap { display: flex; flex-direction: column; gap: 8px; }
+.tc-group { display: flex; flex-direction: column; gap: 6px; }
+.tc-glabel { font-size: 10px; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); padding-left: 2px; }
+.tc-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.tc-chip {
+  flex: none; height: 40px; padding: 0 14px; border-radius: 10px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.03);
+  color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all 0.12s ease;
+}
+.tc-chip:active { transform: scale(0.96); background: var(--bg-glass-hover); }
+.tc-chip.sel { border-color: var(--primary); background: var(--primary-glow); color: #fff; }
+
+/* ─── Side / color selection ─── */
+.side-row { display: flex; gap: 8px; }
+.side-btn {
+  flex: 1; height: 50px; padding: 10px; border-radius: 12px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.03);
+  color: var(--text); font-size: 14px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.12s ease;
+}
+.side-btn:active { transform: scale(0.96); background: var(--bg-glass-hover); }
+.side-btn.sel { border-color: var(--primary); background: var(--primary-glow); color: #fff; }
+.side-ico { width: 24px; height: 24px; display: grid; place-items: center; font-size: 18px; }
+.side-ico.white { color: #fbbf24; }
+.side-ico.black { color: #94a3b8; }
+.side-ico.rand { color: #a855f7; }
 
 .invite-card { margin-top: 16px; padding: 18px; border-radius: var(--radius); background: rgba(255,255,255,0.04); border: 1px solid var(--line); text-align: center; }
 .inv-kicker { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); font-weight: 700; }

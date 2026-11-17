@@ -94,12 +94,12 @@
     preset: 'classic', board: 'green', piece: 'classic', bg: 'classic', sound: 'default',
     anim: true, coords: true, hints: true, last: true, autoq: false, tc: '10+0',
     chat: true, groqKey: CHAT.DEFAULT_KEY, notify: false, notifyAt: '19:00',
-    srvUrl: 'https://chess-9db1.onvoroa.com', onlineHints: false, hintStyle: 'both', humanElo: 1200,
+    srvUrl: 'https://chessapp.onvoroa.com/', onlineHints: false, hintStyle: 'both', humanElo: 1200,
     engineMode: 'app', haptics: true, premove: true, googleClientId: ''
   }, Store.get('chess.settings', {}));
   /* Older installs saved an empty relay URL as the default; use the user's
      supplied VPS unless they enter a different address. */
-  if (!String(settings.srvUrl || '').trim()) settings.srvUrl = 'https://chess-9db1.onvoroa.com';
+  if (!String(settings.srvUrl || '').trim()) settings.srvUrl = 'https://chessapp.onvoroa.com/';
   if (settings.engineMode !== 'stockfish') settings.engineMode = 'app';
 
   /* ── hybrid engine + economy init ─────────────────────────────────── */
@@ -1915,7 +1915,7 @@
         c.textContent = tc.name;
         c.addEventListener('click', function () {
           settings.tc = tc.id; saveSettings();
-          $$('#tc-wrap .tc-chip').forEach(function (x) { x.classList.remove('sel'); });
+          wrap.querySelectorAll('.tc-chip').forEach(function (x) { x.classList.remove('sel'); });
           c.classList.add('sel');
         });
         chips.appendChild(c);
@@ -1967,6 +1967,7 @@
     pendingEngine = settings.engineMode === 'stockfish' ? 'stockfish' : 'app';
     paintEngineChoice();
     if (pendingEngine === 'stockfish') probeStockfishForSheet();
+    $$('#tc-wrap .side-btn').forEach(function (x) { x.classList.remove('sel'); });
     $('#sheet-img').src = b.avatar;
     $('#sheet-name').textContent = b.name;
     $('#sheet-title').textContent = b.title + ' · ' + b.series;
@@ -2023,6 +2024,7 @@
     $('#hs-name').textContent = pendingHuman.name;
     $('#hs-range').value = settings.humanElo;
     paintHumanSheet(settings.humanElo);
+    $$('#tc-wrap-h .side-btn').forEach(function (x) { x.classList.remove('sel'); });
     buildTimeControls('#tc-wrap-h');
     openSheet('#human-sheet');
   }
@@ -2044,6 +2046,8 @@
     humanSheet.addEventListener('click', function (e) {
       var b = e.target.closest('[data-side]');
       if (!b || !pendingHuman) return;
+      $$('#tc-wrap-h .side-btn').forEach(function (x) { x.classList.remove('sel'); });
+      b.classList.add('sel');
       var s = b.dataset.side;
       var color = s === 'w' ? E.WHITE : (s === 'b' ? E.BLACK : (Math.random() < 0.5 ? E.WHITE : E.BLACK));
       pendingHuman.elo = settings.humanElo;
@@ -2076,6 +2080,8 @@
       if (engineButton) { chooseEngine(engineButton.dataset.engineMode); return; }
       var b = e.target.closest('[data-side]');
       if (!b || !pendingBot) return;
+      $$('#tc-wrap .side-btn').forEach(function (x) { x.classList.remove('sel'); });
+      b.classList.add('sel');
       var s = b.dataset.side;
       var color = s === 'w' ? E.WHITE : (s === 'b' ? E.BLACK : (Math.random() < 0.5 ? E.WHITE : E.BLACK));
       startPendingBot(color);
