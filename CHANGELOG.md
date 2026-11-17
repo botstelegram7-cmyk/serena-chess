@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.9 — 2026-11-01
+
+### Embed Stockfish 19 WebAssembly in the app
+
+- **Stockfish 19 Lite (WebAssembly) implanted in app repo** — runs locally on device
+- No VPS needed for Grandmaster-level engine analysis
+- Engine priority: Local Stockfish WASM → VPS Stockfish → Character engine
+- `assets/wasm/stockfish.wasm` (1.7MB) + `assets/wasm/stockfish.js` bundled in APK
+- `assets/js/stockfish-local.js` — UCI wrapper for local Stockfish
+- `assets/js/hybrid.js` — updated to use local Stockfish first, VPS as fallback
+- Works completely offline once installed
+
 ## 3.8 — 2026-11-01
 
 ### Remove inline touch handlers — single document-level touch→click path
