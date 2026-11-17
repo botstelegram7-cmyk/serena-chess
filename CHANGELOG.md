@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.8 — 2026-11-01
+
+### Remove inline touch handlers — single document-level touch→click path
+
+- Removed all inline `ontouchend=""` attributes from home screen buttons
+- Document-level touchstart/touchmove/touchend now handles every tap
+- Replays a single, stationary tap as a normal click (no double activation)
+- Board gestures, puzzle gestures, form fields, and disabled buttons are left alone
+- Duplicate browser clicks after a replayed tap are suppressed
+
 ## 3.7 — 2026-11-01
 
 ### Touch responsiveness fix

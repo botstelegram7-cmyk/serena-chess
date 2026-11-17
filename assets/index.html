@@ -86,7 +86,7 @@
         <h2 class="hero-title">Learn Chess<br><span style="color:#fbbf24;font-weight:700;">Step by Step</span></h2>
         <p class="hero-sub">Interactive lessons, fun challenges, and win more games</p>
         <div class="hero-btn">
-          <button class="btn-big" onclick="appGo('learn')" ontouchend="appGo('learn')">
+          <button class="btn-big" onclick="appGo('learn')">
             <svg class="ic" style="fill:#111827;"><use href="#i-play"/></svg>
             Continue Learning
           </button>
@@ -96,32 +96,32 @@
 
     <!-- primary modes -->
     <div class="mode-grid">
-      <button class="mode-card mc-bots" data-go="bots" onclick="appGo('bots')" ontouchend="appGo('bots')">
+      <button class="mode-card mc-bots" data-go="bots" onclick="appGo('bots')">
         <span class="mc-ico"><svg class="ic"><use href="#i-bot"/></svg></span>
         <span class="mc-title">Play Bots</span>
         <span class="mc-sub">32 characters</span>
       </button>
-      <button class="mode-card mc-online" data-action="open-online" onclick="appOpenOnline()" ontouchend="appOpenOnline()">
+      <button class="mode-card mc-online" data-action="open-online" onclick="appOpenOnline()">
         <span class="mc-ico"><svg class="ic"><use href="#i-globe"/></svg></span>
         <span class="mc-title">Play Online</span>
         <span class="mc-sub">Random opponent</span>
       </button>
-      <button class="mode-card mc-friends" data-action="open-friends" onclick="appOpenFriends()" ontouchend="appOpenFriends()">
+      <button class="mode-card mc-friends" data-action="open-friends" onclick="appOpenFriends()">
         <span class="mc-ico"><svg class="ic"><use href="#i-link"/></svg></span>
         <span class="mc-title">Friends</span>
         <span class="mc-sub">Invite by code</span>
       </button>
-      <button class="mode-card mc-local" data-action="play-local" onclick="appStartLocal()" ontouchend="appStartLocal()">
+      <button class="mode-card mc-local" data-action="play-local" onclick="appStartLocal()">
         <span class="mc-ico"><svg class="ic"><use href="#i-users"/></svg></span>
         <span class="mc-title">Pass &amp; Play</span>
         <span class="mc-sub">Same device</span>
       </button>
-      <button class="mode-card mc-puzzles" data-go="puzzles" onclick="appGo('puzzles')" ontouchend="appGo('puzzles')">
+      <button class="mode-card mc-puzzles" data-go="puzzles" onclick="appGo('puzzles')">
         <span class="mc-ico"><svg class="ic"><use href="#i-puzzle"/></svg></span>
         <span class="mc-title">Puzzles</span>
         <span class="mc-sub">Daily tactic</span>
       </button>
-      <button class="mode-card mc-lessons" data-go="learn" onclick="appGo('learn')" ontouchend="appGo('learn')">
+      <button class="mode-card mc-lessons" data-go="learn" onclick="appGo('learn')">
         <span class="mc-ico"><svg class="ic"><use href="#i-learn"/></svg></span>
         <span class="mc-title">Lessons</span>
         <span class="mc-sub">Learn step by step</span>
@@ -131,9 +131,9 @@
     <!-- shop -->
     <div class="section-label row-label">
       <span>Shop</span>
-      <button class="link-btn" data-action="open-shop" onclick="appOpenShop()" ontouchend="appOpenShop()">Browse</button>
+      <button class="link-btn" data-action="open-shop" onclick="appOpenShop()">Browse</button>
     </div>
-    <button class="train-card" data-action="open-shop" onclick="appOpenShop()" ontouchend="appOpenShop()">
+    <button class="train-card" data-action="open-shop" onclick="appOpenShop()">
       <svg class="ic ic-lg"><use href="#i-trophy"/></svg>
       <span class="tc-title">Shop</span>
       <span class="tc-sub" id="shop-sub">Spend gold</span>
@@ -142,17 +142,17 @@
     <!-- train -->
     <div class="section-label">Train</div>
     <div class="train-row">
-      <button class="train-card" data-go="puzzles" onclick="appGo('puzzles')" ontouchend="appGo('puzzles')">
+      <button class="train-card" data-go="puzzles" onclick="appGo('puzzles')">
         <svg class="ic ic-lg"><use href="#i-puzzle"/></svg>
         <span class="tc-title">Puzzles</span>
         <span class="tc-sub" id="puz-sub">140 tactics</span>
       </button>
-      <button class="train-card" data-go="practice" onclick="appGo('practice')" ontouchend="appGo('practice')">
+      <button class="train-card" data-go="practice" onclick="appGo('practice')">
         <svg class="ic ic-lg"><use href="#i-target"/></svg>
         <span class="tc-title">Practice</span>
         <span class="tc-sub">12 endgames</span>
       </button>
-      <button class="train-card" data-action="open-archive" onclick="appGo('archive')" ontouchend="appGo('archive')">
+      <button class="train-card" data-action="open-archive" onclick="appGo('archive')">
         <svg class="ic ic-lg"><use href="#i-chart"/></svg>
         <span class="tc-title">My Games</span>
         <span class="tc-sub" id="arch-sub">Review</span>
@@ -162,7 +162,7 @@
     <!-- quick match -->
     <div class="section-label row-label">
       <span>Quick match</span>
-      <button class="link-btn" data-go="bots" onclick="appGo('bots')" ontouchend="appGo('bots')">See all</button>
+      <button class="link-btn" data-go="bots" onclick="appGo('bots')">See all</button>
     </div>
     <div class="quick-row" id="quick-bots"></div>
 
@@ -175,7 +175,7 @@
       <div class="stat"><div class="stat-val" id="hm-b">–</div><div class="stat-key">Best win</div></div>
     </div>
 
-    <div class="home-foot" id="ver-tag">Serena Chess · v3.7</div>
+    <div class="home-foot" id="ver-tag">Serena Chess · v3.8</div>
   </div>
 </section>
 
