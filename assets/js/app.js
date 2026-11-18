@@ -3182,7 +3182,7 @@ var reviewInGame = false;
     if (current.indexOf('pick-') === 0) { go('settings'); return true; }
     if (current === 'review') {
       if (analysisHandle) { analysisHandle.cancel(); analysisHandle = null; }
-      go(G.game && !G.over ? 'game' : 'home'); return true;
+      go(G.game ? 'game' : 'home'); return true;
     }
     if (current === 'online' || current === 'friends') { ON.leaveRoom(); go('home'); return true; }
     if (current !== 'home') { Clock.stop(); go('home'); return true; }

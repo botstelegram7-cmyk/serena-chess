@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.15 — 2026-11-01
+
+### Review back navigation + Stockfish 19 on VPS
+
+- **Fixed review back navigation** — hardware back button and on-screen close now return to the game screen (not home) when a game is in progress or over
+- **VPS Stockfish 19** — Dockerfile now downloads Stockfish 19 universal binary from official GitHub releases (auto-detects AVX2/AVX-512) instead of outdated Debian apt package
+
 ## 3.14 — 2026-11-01
 
 ### Fix oversized chess pieces covering entire board
