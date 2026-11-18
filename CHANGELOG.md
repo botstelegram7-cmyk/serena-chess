@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.12 — 2026-11-01
+
+### Fix promotion pop-up + clean home screen + organized settings
+
+- **Fixed promotion pop-up** — added missing CSS for `.promo-btn` so the piece selection sheet shows all four options (Queen, Rook, Bishop, Knight)
+- **Removed character from home screen** — removed avatar/name/rating bar; settings gear moved to top-right corner
+- **Organized settings** — section-by-section layout with clear dividers for themes, AI, online, daily reminders, and credits
+
 ## 3.11 — 2026-11-01
 
 ### Fix duplicate function declaration — app buttons dead
