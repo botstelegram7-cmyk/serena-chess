@@ -235,27 +235,93 @@ function dequeue(ws) {
    Spawns a native Stockfish binary and answers "bestmove" for a FEN.
    Missing or unready binaries return 503; the app surfaces the VPS failure
    instead of silently claiming a local-engine move came from Stockfish. */
-function resolveStockfishBin() {
-  // Try Stockfish 19 from GitHub first (best performance, AVX2/AVX-512),
-  // then fall back to Debian stockfish package (known compatible).
-  const candidates = [
-    process.env.STOCKFISH_BIN,          // Docker ENV override (defaults to /usr/local/bin/stockfish)
-    '/usr/local/bin/stockfish',         // Stockfish 19 from GitHub releases (primary)
-    '/usr/local/bin/stockfish-19',      // Stockfish 19 alt location
-    '/usr/games/stockfish',             // Debian apt stockfish (fallback)
-    '/usr/bin/stockfish',               // Debian alternative install path (fallback)
-    'stockfish'                         // PATH lookup last (fallback)
-  ];
-  for (const c of candidates) {
-    if (!c) continue;
-    try {
-      if (fs.existsSync(c) && fs.statSync(c).isFile()) return c;
-    } catch (_) { /* ignore */ }
-  }
-  return 'stockfish';
-}
-const STOCKFISH_BIN = resolveStockfishBin();
+let STOCKFISH_BIN = null;
 let stockfishReady = false;
+
+/* Probe a single Stockfish binary with a UCI handshake. Returns true if ready. */
+function probeStockfish(bin) {
+  return new Promise((resolve) => {
+    let done = false;
+    const timer = setTimeout(() => {
+      if (done) return;
+      done = true;
+      try { proc.kill(); } catch (_) {}
+      resolve(false);
+    }, 3000);
+    let proc;
+    try {
+      proc = spawn(bin, [], { stdio: ['pipe', 'pipe', 'ignore'] });
+    } catch (e) {
+      clearTimeout(timer);
+      resolve(false);
+      return;
+    }
+    const swallowError = (s) => { if (s) s.on('error', () => {}); };
+    swallowError(proc.stdin);
+    swallowError(proc.stdout);
+    swallowError(proc.stderr);
+    proc.stdout.setEncoding('utf8');
+    let phase = 'uci';
+    proc.stdout.on('data', (chunk) => {
+      if (done) return;
+      if (phase === 'uci' && chunk.includes('uciok')) {
+        phase = 'ready';
+        try { proc.stdin.write('isready\n'); } catch (_) {}
+      }
+      if (phase === 'ready' && chunk.includes('readyok')) {
+        done = true;
+        clearTimeout(timer);
+        try { proc.stdin.end('quit\n'); } catch (_) { proc.kill(); }
+        resolve(true);
+      }
+    });
+    proc.on('error', () => {
+      if (!done) { done = true; clearTimeout(timer); resolve(false); }
+    });
+    proc.on('close', () => {
+      if (!done) { done = true; clearTimeout(timer); resolve(false); }
+    });
+    try { proc.stdin.write('uci\n'); } catch (_) {
+      if (!done) { done = true; clearTimeout(timer); resolve(false); }
+    }
+  });
+}
+
+/* Try each candidate binary in order; use the first one that passes UCI. */
+async function initStockfish() {
+  const candidates = [
+    process.env.STOCKFISH_BIN,
+    '/usr/local/bin/stockfish',
+    '/usr/local/bin/stockfish-19',
+    '/usr/games/stockfish',
+    '/usr/bin/stockfish',
+    'stockfish'
+  ];
+  for (const bin of candidates) {
+    if (!bin) continue;
+    try {
+      const stat = fs.statSync(bin);
+      if (!stat.isFile()) continue;
+    } catch (_) { continue; }
+    console.log('testing stockfish binary:', bin);
+    const ok = await probeStockfish(bin);
+    if (ok) {
+      STOCKFISH_BIN = bin;
+      stockfishReady = true;
+      console.log('stockfish ready:', bin);
+      return;
+    }
+    console.log('stockfish binary failed handshake:', bin);
+  }
+  stockfishReady = false;
+  console.log('stockfish unavailable (no working binary found)');
+}
+
+initStockfish().then(() => {
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`chess relay listening on :${PORT}  (stockfish: ${stockfishReady})`);
+  });
+});
 
 function stockfishBestMove(fen, color, cb) {
   if (!STOCKFISH_BIN) return cb(new Error('no_stockfish_bin'));
