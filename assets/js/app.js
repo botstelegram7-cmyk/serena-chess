@@ -1638,7 +1638,7 @@ var reviewInGame = false;
     });
   }
 
-  function currentMeta() {  function currentMeta() {
+  function currentMeta() {
     var names = playerNames();
     var res = G.over ? (function () {
       var ov = $('#ov-title').textContent || '';

@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.11 — 2026-11-01
+
+### Fix duplicate function declaration — app buttons dead
+
+- **Fixed `function currentMeta() {  function currentMeta() {`** — malformed duplicate declaration caused app.js to fail parsing
+- `node --check` passes; `boot()` runs, click/touch router attaches, globals exposed (`appGo`, `appOpenOnline`, `appOpenFriends`, `appStartLocal`, `appOpenShop`)
+- All home screen buttons respond to taps again
+
 ## 3.10 — 2026-11-01
 
 ### Fix pawn promotion + VPS Stockfish support
