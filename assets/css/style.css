@@ -534,7 +534,7 @@ button:not(:disabled):active { filter: brightness(0.92); }
 
 /* ─── Promotion sheet ─── */
 .promo-row { display: flex; gap: 10px; justify-content: center; padding: 16px 12px; }
-.promo-btn { width: 56px; height: 56px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.promo-btn { width: 56px; height: 56px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center; cursor: pointer; pointer-events: auto; }
 .promo-btn:active { background: var(--bg-glass-hover); }
 .promo-btn img { width: 32px; height: 32px; }
 

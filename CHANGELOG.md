@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.31 — 2026-11-01
+
+### Fix review blank screen + promotion pop-up + home screen clean
+
+- **Fixed review blank black screen** — `renderReview()` now shows `#review-body` after analysis completes (was hidden, showing blank screen)
+- **Fixed promotion pop-up disappearing** — added `promoClickTime` flag so scrim tap doesn't close sheet right after choosing a piece; `pointer-events: auto` on `.promo-btn`
+- **Home screen clean** — no character avatar/name/rating bar on home screen (me-bar removed); settings gear at top-right corner
+- All previous fixes included
+
 ## 3.30 — 2026-11-01
 
 ### Fix promotion auto-dismiss + review screen + skeleton loading
