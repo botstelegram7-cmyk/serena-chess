@@ -1,13 +1,22 @@
 # Changelog
 
+## 3.32 — 2026-11-01
+
+### Fix promotion pop-up + remove quick match + review screen + Dockerfile
+
+- **Fixed promotion pop-up disappearing** — scrim click does NOT dismiss during promotion; user MUST choose a piece (Queen/Rook/Bishop/Knight)
+- **Removed Quick match from home screen** — cleaner home layout with just mode cards, shop, train, and record sections
+- **Fixed Dockerfile** — simplified for Voroa/Render builds; Debian stockfish primary, GitHub SF19 as bonus
+- **Added .dockerignore** — cleaner Docker build context
+- All previous fixes included
+
 ## 3.31 — 2026-11-01
 
 ### Fix review blank screen + promotion pop-up + home screen clean
 
-- **Fixed review blank black screen** — `renderReview()` now shows `#review-body` after analysis completes (was hidden, showing blank screen)
-- **Fixed promotion pop-up disappearing** — added `promoClickTime` flag so scrim tap doesn't close sheet right after choosing a piece; `pointer-events: auto` on `.promo-btn`
-- **Home screen clean** — no character avatar/name/rating bar on home screen (me-bar removed); settings gear at top-right corner
-- All previous fixes included
+- **Fixed review blank black screen** — `renderReview()` now shows `#review-body` after analysis completes
+- **Fixed promotion pop-up disappearing** — promo button clicks no longer bubble to scrim
+- **Home screen clean** — no character avatar/name/rating bar on home screen
 
 ## 3.30 — 2026-11-01
 
