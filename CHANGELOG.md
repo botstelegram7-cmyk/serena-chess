@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.14 — 2026-11-01
+
+### Fix oversized chess pieces covering entire board
+
+- **Fixed piece sizing** — duplicate `.piece` CSS definition had `width: 100%; height: 100%` instead of `12.5%`, causing pieces to render full-board size instead of fitting inside one square
+- Pieces now correctly render at one-square size with `background-size: contain` preserving aspect ratio
+
 ## 3.13 — 2026-11-01
 
 ### Promotion pop-up now dismissible — never stuck on screen

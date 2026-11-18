@@ -5,8 +5,8 @@
 (function (root) {
   'use strict';
 
-var VERSION = '3.13';
-var BUILD = 26;
+var VERSION = '3.14';
+var BUILD = 27;
 
   var LOG = [
     { v: '3.2', date: '2026-11-17', title: 'Choose your chess engine', items: [
