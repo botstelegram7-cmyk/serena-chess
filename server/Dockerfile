@@ -20,9 +20,9 @@ RUN apt-get update \
     && rm -rf /tmp/stockfish-* \
     && rm -rf /var/lib/apt/lists/*
 
-COPY package*.json ./
+COPY server/package*.json ./
 RUN npm install --omit=dev
-COPY index.js ./
+COPY server/index.js ./
 
 ENV PORT=8080
 ENV STOCKFISH_BIN=/usr/local/bin/stockfish
