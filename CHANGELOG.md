@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.30 — 2026-11-01
+
+### Fix promotion auto-dismiss + review screen + skeleton loading
+
+- **Fixed promotion auto-dismiss** — promo button clicks no longer bubble to scrim, preventing the sheet from closing before the user chooses a piece
+- **Fixed review screen** — added missing `#analysing` and `#review-body` elements; `openReview()` was throwing TypeError on null elements, preventing review from ever loading
+- **Added skeleton loading** — CSS skeleton states for async operations (review analysis, etc.)
+- Review buttons (close-review, review-play-pause, review-retry) now work correctly
+- All previous fixes included (promo button CSS, clean home screen, organized settings, oversized pieces, back navigation)
+
 ## 3.15 — 2026-11-01
 
 ### Review back navigation + Stockfish 19 on VPS
