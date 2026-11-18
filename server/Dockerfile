@@ -15,7 +15,6 @@ RUN set -euxo pipefail \
     && test -n "$SF_BIN" \
     && cp "$SF_BIN" /usr/games/stockfish \
     && chmod +x /usr/games/stockfish \
-    && /usr/games/stockfish --help >/dev/null 2>&1 || /usr/games/stockfish >/dev/null 2>&1 || true \
     && rm -f /tmp/stockfish.tar.gz \
     && rm -rf /tmp/stockfish-* \
     && rm -rf /var/lib/apt/lists/*
