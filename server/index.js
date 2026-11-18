@@ -237,10 +237,12 @@ function dequeue(ws) {
    instead of silently claiming a local-engine move came from Stockfish. */
 function resolveStockfishBin() {
   const candidates = [
-    process.env.STOCKFISH_BIN,
-    '/usr/games/stockfish',
-    '/usr/local/bin/stockfish',
-    'stockfish'
+    process.env.STOCKFISH_BIN,          // Docker ENV override
+    '/usr/games/stockfish',             // Debian apt stockfish (known working on this VPS)
+    '/usr/bin/stockfish',               // Debian alternative install path
+    '/usr/local/bin/stockfish-19',      // Stockfish 19 from GitHub releases
+    '/usr/local/bin/stockfish',         // symlink fallback
+    'stockfish'                         // PATH lookup last
   ];
   for (const c of candidates) {
     if (!c) continue;
@@ -248,7 +250,7 @@ function resolveStockfishBin() {
       if (fs.existsSync(c) && fs.statSync(c).isFile()) return c;
     } catch (_) { /* ignore */ }
   }
-  return 'stockfish'; /* fall back to PATH lookup */
+  return 'stockfish';
 }
 const STOCKFISH_BIN = resolveStockfishBin();
 let stockfishReady = false;

@@ -2,26 +2,17 @@ FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# Install Stockfish 19 universal binary from official GitHub releases.
-# Universal binary auto-detects CPU features (AVX2, AVX-512, etc.) for best VPS performance.
+# Install Stockfish engine on the VPS.
+# Primary: Debian stockfish package (known compatible with this system).
+# Bonus: also download Stockfish 19 universal binary from GitHub releases
+# as /usr/local/bin/stockfish-19 for when the VPS CPU supports AVX2/AVX-512.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates wget tar xz-utils \
+    && apt-get install -y --no-install-recommends stockfish ca-certificates wget tar xz-utils \
     && mkdir -p /usr/games \
-    && echo "=== Downloading Stockfish 19 ===" \
-    && wget -q https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-linux-x86-64-universal.tar.gz -O /tmp/stockfish.tar.gz || { echo "wget failed"; exit 1; } \
-    && echo "=== Download complete, file size: ===" \
-    && ls -la /tmp/stockfish.tar.gz \
-    && echo "=== Extracting ===" \
-    && tar xzf /tmp/stockfish.tar.gz -C /tmp || { echo "tar failed"; exit 1; } \
-    && echo "=== Contents of /tmp ===" \
-    && ls -la /tmp/ \
+    && wget -q https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-linux-x86-64-universal.tar.gz -O /tmp/stockfish.tar.gz || true \
+    && tar xzf /tmp/stockfish.tar.gz -C /tmp 2>/dev/null || true \
     && SF_BIN="$(find /tmp -maxdepth 4 -type f -name 'stockfish*' | head -1)" \
-    && echo "=== Found Stockfish binary: $SF_BIN ===" \
-    && test -n "$SF_BIN" || { echo "No stockfish binary found"; exit 1; } \
-    && cp "$SF_BIN" /usr/games/stockfish \
-    && chmod +x /usr/games/stockfish \
-    && ln -sf /usr/games/stockfish /usr/local/bin/stockfish \
-    && echo "=== Stockfish installed at /usr/games/stockfish and /usr/local/bin/stockfish ===" \
+    && if [ -n "$SF_BIN" ]; then cp "$SF_BIN" /usr/local/bin/stockfish-19 && chmod +x /usr/local/bin/stockfish-19; fi \
     && rm -f /tmp/stockfish.tar.gz \
     && rm -rf /tmp/stockfish-* \
     && rm -rf /var/lib/apt/lists/*
