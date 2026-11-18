@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.10 — 2026-11-01
+
+### Fix pawn promotion + VPS Stockfish support
+
+- **Fixed pawn promotion** — `engineMoveFromReply` now defaults to Queen promotion when Stockfish returns a move without a promotion piece (e.g. `e7e8` instead of `e7e8q`)
+- **VPS Stockfish ready** — latest original Stockfish binary installed on `chessapp.onvoroa.com/`
+- Stockfish 19 WASM remains embedded in app for offline play
+
 ## 3.9 — 2026-11-01
 
 ### Embed Stockfish 19 WebAssembly in the app

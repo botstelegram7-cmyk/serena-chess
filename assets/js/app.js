@@ -840,10 +840,14 @@ var reviewBoard = null;
       var from = E.fromAlgebraic(uci[1].toLowerCase());
       var to = E.fromAlgebraic(uci[2].toLowerCase());
       var promo = uci[3] ? ({ q: E.QUEEN, r: E.ROOK, b: E.BISHOP, n: E.KNIGHT }[uci[3].toLowerCase()]) : 0;
+      var queenPromo = null;
       for (var i = 0; i < legal.length; i++) {
         if (legal[i].from !== from || legal[i].to !== to) continue;
-        if (promo ? legal[i].promo === promo : !legal[i].promo) return legal[i];
+        if (!legal[i].promo && !promo) return legal[i];
+        if (promo && legal[i].promo === promo) return legal[i];
+        if (legal[i].promo === E.QUEEN) queenPromo = legal[i];
       }
+      if (queenPromo) return queenPromo;
       return null;
     }
     var san = text.replace(/[+#!?]/g, '');
