@@ -222,7 +222,16 @@
   function closeSheets() { $('#scrim').hidden = true; $$('.sheet').forEach(function (s) { s.hidden = true; }); }
   var scrim = $('#scrim');
   if (scrim) {
-    scrim.addEventListener('click', function () { if (!G.awaitingPromo) closeSheets(); });
+    scrim.addEventListener('click', function () {
+      if (G.awaitingPromo) {
+        /* Allow dismissing the promotion popup by tapping outside —
+           cancel the pending move and close the sheet. */
+        G.awaitingPromo = null;
+        closeSheets();
+      } else {
+        closeSheets();
+      }
+    });
   }
 
   function confirmDialog(title, text, onYes) {

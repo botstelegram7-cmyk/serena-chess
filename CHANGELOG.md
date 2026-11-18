@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.13 — 2026-11-01
+
+### Promotion pop-up now dismissible — never stuck on screen
+
+- **Added close (X) button** to the promotion sheet — always dismissible
+- **Sheet-scrim now closes promotion popup** — tapping outside dismisses it (cancels pending move)
+- **Promotion only triggers for actual pawn promotions** — `FLAG_PROMO` guard in `handleUserMove`
+- All previous fixes (promo button CSS, clean home screen, organized settings) included
+
 ## 3.12 — 2026-11-01
 
 ### Fix promotion pop-up + clean home screen + organized settings
