@@ -236,13 +236,15 @@ function dequeue(ws) {
    Missing or unready binaries return 503; the app surfaces the VPS failure
    instead of silently claiming a local-engine move came from Stockfish. */
 function resolveStockfishBin() {
+  // Try Stockfish 19 from GitHub first (best performance, AVX2/AVX-512),
+  // then fall back to Debian stockfish package (known compatible).
   const candidates = [
-    process.env.STOCKFISH_BIN,          // Docker ENV override
-    '/usr/games/stockfish',             // Debian apt stockfish (known working on this VPS)
-    '/usr/bin/stockfish',               // Debian alternative install path
-    '/usr/local/bin/stockfish-19',      // Stockfish 19 from GitHub releases
-    '/usr/local/bin/stockfish',         // symlink fallback
-    'stockfish'                         // PATH lookup last
+    process.env.STOCKFISH_BIN,          // Docker ENV override (defaults to /usr/local/bin/stockfish)
+    '/usr/local/bin/stockfish',         // Stockfish 19 from GitHub releases (primary)
+    '/usr/local/bin/stockfish-19',      // Stockfish 19 alt location
+    '/usr/games/stockfish',             // Debian apt stockfish (fallback)
+    '/usr/bin/stockfish',               // Debian alternative install path (fallback)
+    'stockfish'                         // PATH lookup last (fallback)
   ];
   for (const c of candidates) {
     if (!c) continue;
