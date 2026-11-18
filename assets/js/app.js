@@ -718,7 +718,7 @@ var reviewBoard = null;
       var img = document.createElement('img');
       img.src = UI.pieceSrc(settings.piece, color, t);
       b.appendChild(img);
-      b.addEventListener('click', function () { G.awaitingPromo = null; closeSheets(); cb(t); });
+      b.addEventListener('click', function (e) { e.stopPropagation(); G.awaitingPromo = null; closeSheets(); cb(t); });
       row.appendChild(b);
     });
     G.awaitingPromo = true;

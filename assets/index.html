@@ -704,7 +704,14 @@
     <button class="rev-h-btn" data-action="flip-review" aria-label="Flip board"><svg class="ic"><use href="#i-flip"/></svg></button>
   </div>
 
-  <div class="review-wrap">
+  <!-- analysing overlay -->
+  <div id="analysing" class="review-skeleton">
+    <div class="skeleton-title">Analysing moves…</div>
+    <div class="skeleton-bar" id="an-fill"></div>
+    <div class="skeleton-text" id="an-sub">0 / 0</div>
+  </div>
+
+  <div id="review-body" class="review-wrap">
     <div class="review-boards">
       <!-- Opponent Profile (Top) -->
       <div class="review-player-row">
@@ -786,6 +793,7 @@
       <div class="move-tally" id="rev-move-tally"></div>
     </div>
   </div>
+</div>
 </section>
 
 <!-- archive sheet -->
