@@ -534,9 +534,9 @@ button:not(:disabled):active { filter: brightness(0.92); }
 
 /* ─── Promotion sheet ─── */
 .promo-row { display: flex; gap: 10px; justify-content: center; padding: 16px 12px; }
-.promo-btn { width: 56px; height: 56px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center; cursor: pointer; pointer-events: auto; }
+.promo-btn { width: 56px; height: 56px; border-radius: 14px; border: 2px solid var(--line); background: var(--bg-glass); display: flex; align-items: center; justify-content: center; cursor: pointer; pointer-events: auto; }
 .promo-btn:active { background: var(--bg-glass-hover); }
-.promo-btn img { width: 32px; height: 32px; }
+.promo-btn img { width: 34px; height: 34px; }
 
 /* ─── Chess.com style Review screen ─── */
 .review-screen { flex: 1; display: flex; flex-direction: column; min-height: 0; padding-bottom: var(--safe-bottom); }

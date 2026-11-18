@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.33 — 2026-11-01
+
+### Fix promotion pop-up + review styling
+
+- **Fixed promotion pop-up disappearing** — scrim click does NOT dismiss during promotion; user MUST choose a piece (Queen/Rook/Bishop/Knight). Stronger promo button borders and larger piece images for visibility.
+- **Improved review screen styling** — better contrast and layout for game analysis
+- **Home screen clean** — Quick match section removed; no character avatar/name/rating bar
+- All previous fixes included
+
 ## 3.32 — 2026-11-01
 
 ### Fix promotion pop-up + remove quick match + review screen + Dockerfile
