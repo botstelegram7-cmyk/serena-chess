@@ -298,12 +298,12 @@ function stockfishBestMove(fen, color, cb) {
     output = (output + chunk).slice(-12000);
     if (phase === 'uci' && output.includes('uciok')) {
       phase = 'ready';
-      proc.stdin.write('setoption name Threads value 1\nsetoption name Hash value 64\nisready\n');
+      try { proc.stdin.write('setoption name Threads value 1\nsetoption name Hash value 64\nisready\n'); } catch (_) {}
     }
     if (phase === 'ready' && output.includes('readyok')) {
       phase = 'search';
       output = '';
-      proc.stdin.write(`position fen ${fen.trim()}\ngo movetime 1200\n`);
+      try { proc.stdin.write(`position fen ${fen.trim()}\ngo movetime 1200\n`); } catch (_) {}
     }
     if (phase === 'search') {
       const match = output.match(/\bbestmove\s+([a-h][1-8][a-h][1-8][qrbn]?|0000)\b/i);
@@ -313,7 +313,7 @@ function stockfishBestMove(fen, color, cb) {
       }
     }
   });
-  proc.stdin.write('uci\n');
+  try { proc.stdin.write('uci\n'); } catch (_) {}
 }
 
 /* ------------------------------------------------------------ http + ws --- */
@@ -675,6 +675,7 @@ setInterval(() => {
 
 /* Detect Stockfish at startup using the UCI handshake. `uci` only returns
    uciok; `isready` is required before the server can advertise stockfish:true. */
+let stockfishClosed = false;
 try {
   const test = spawn(STOCKFISH_BIN, [], { stdio: ['pipe', 'pipe', 'ignore'] });
   let probePhase = 'uci';
@@ -690,7 +691,7 @@ try {
     if (probeDone) return;
     if (probePhase === 'uci' && chunk.includes('uciok')) {
       probePhase = 'ready';
-      test.stdin.write('isready\n');
+      try { test.stdin.write('isready\n'); } catch (_) {}
     }
     if (probePhase === 'ready' && chunk.includes('readyok')) {
       probeDone = true; stockfishReady = true; clearTimeout(probeTimer);
@@ -704,11 +705,12 @@ try {
     console.log('stockfish unavailable (binary not found)');
   });
   test.on('close', () => {
+    stockfishClosed = true;
     if (!probeDone) {
       probeDone = true; stockfishReady = false; clearTimeout(probeTimer);
     }
   });
-  test.stdin.write('uci\n');
+  if (!stockfishClosed) { try { test.stdin.write('uci\n'); } catch (_) {} }
 } catch (e) { stockfishReady = false; }
 
 server.listen(PORT, '0.0.0.0', () => {
