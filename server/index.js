@@ -283,6 +283,10 @@ function stockfishBestMove(fen, color, cb) {
   } catch (e) {
     return cb(new Error('stockfish_missing'));
   }
+  const swallowError = (s) => { if (s) s.on('error', () => {}); };
+  swallowError(proc.stdin);
+  swallowError(proc.stdout);
+  swallowError(proc.stderr);
   timer = setTimeout(() => {
     try { if (proc) proc.kill(); } catch (_) {}
     finish(new Error('stockfish_timeout'));
@@ -678,6 +682,10 @@ setInterval(() => {
 let stockfishClosed = false;
 try {
   const test = spawn(STOCKFISH_BIN, [], { stdio: ['pipe', 'pipe', 'ignore'] });
+  const swallowError = (s) => { if (s) s.on('error', () => {}); };
+  swallowError(test.stdin);
+  swallowError(test.stdout);
+  swallowError(test.stderr);
   let probePhase = 'uci';
   let probeDone = false;
   const probeTimer = setTimeout(() => {
