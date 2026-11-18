@@ -4,14 +4,25 @@ WORKDIR /app
 
 # Install Stockfish 19 universal binary from official GitHub releases.
 # Universal binary auto-detects CPU features (AVX2, AVX-512, etc.) for best VPS performance.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl tar xz-utils \
+RUN set -euxo pipefail \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates wget tar xz-utils \
     && mkdir -p /usr/games \
-    && curl -Lsf https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-linux-x86-64-universal.tar.gz -o /tmp/stockfish.tar.gz \
+    && echo "Downloading Stockfish 19..." \
+    && wget -q https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-linux-x86-64-universal.tar.gz -O /tmp/stockfish.tar.gz \
+    && echo "Extracting..." \
     && tar xzf /tmp/stockfish.tar.gz -C /tmp \
-    && cp $(find /tmp -maxdepth 4 -type f -name 'stockfish*' | head -1) /usr/games/stockfish \
+    && echo "Contents of /tmp:" \
+    && ls -la /tmp/ \
+    && SF_BIN="$(find /tmp -maxdepth 4 -type f -name 'stockfish*' | head -1)" \
+    && echo "Found Stockfish binary: $SF_BIN" \
+    && test -n "$SF_BIN" \
+    && cp "$SF_BIN" /usr/games/stockfish \
     && chmod +x /usr/games/stockfish \
-    && rm -rf /tmp/stockfish.tar.gz /tmp/stockfish-* /var/lib/apt/lists/*
+    && echo "Stockfish installed at /usr/games/stockfish" \
+    && rm -f /tmp/stockfish.tar.gz \
+    && rm -rf /tmp/stockfish-* \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 RUN npm install --omit=dev
