@@ -221,20 +221,14 @@
   function openSheet(id) { $('#scrim').hidden = false; $(id).hidden = false; }
   function closeSheets() { $('#scrim').hidden = true; $$('.sheet').forEach(function (s) { s.hidden = true; }); }
   var scrim = $('#scrim');
-  var promoClickTime = 0; /* timestamp of last promo button tap, to ignore scrim click */
   if (scrim) {
     scrim.addEventListener('click', function () {
       if (G.awaitingPromo) {
-        /* Ignore scrim tap if a promo button was just clicked (<150ms ago) —
-           prevents the sheet from closing before the user chooses a piece. */
-        if (Date.now() - promoClickTime < 150) return;
-        /* Allow dismissing the promotion popup by tapping outside —
-           cancel the pending move and close the sheet. */
-        G.awaitingPromo = null;
-        closeSheets();
-      } else {
-        closeSheets();
+        /* During promotion the user MUST choose a piece — tapping outside
+           does NOT dismiss the sheet. Ignore the click. */
+        return;
       }
+      closeSheets();
     });
   }
 
@@ -724,7 +718,6 @@ var reviewBoard = null;
       b.appendChild(img);
       b.addEventListener('click', function (e) {
         e.stopPropagation();
-        promoClickTime = Date.now();
         G.awaitingPromo = null;
         closeSheets();
         cb(t);
