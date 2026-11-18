@@ -7,11 +7,12 @@ WORKDIR /app
 # performance on the VPS. The relay reports stockfish:true only after a real
 # `uci` / `isready` handshake succeeds.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates wget tar \
+    && apt-get install -y --no-install-recommends ca-certificates wget tar xz-utils \
     && wget -q https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-linux-x86-64-universal.tar.gz \
     && tar xzf stockfish-linux-x86-64-universal.tar.gz \
-    && SF_BIN="$(find . -maxdepth 3 -name 'stockfish*' -type f -executable | head -1)" \
-    && cp "$SF_BIN" /usr/games/stockfish \
+    && if [ -f stockfish-ubuntu-x86-64-avx2 ]; then cp stockfish-ubuntu-x86-64-avx2 /usr/games/stockfish; \
+       elif [ -f stockfish ]; then cp stockfish /usr/games/stockfish; \
+       else find . -maxdepth 4 -type f -executable -name 'stockfish*' -exec cp {} /usr/games/stockfish \; -quit; fi \
     && chmod +x /usr/games/stockfish \
     && rm -rf stockfish-linux-x86-64-universal.tar.gz stockfish-* \
     && rm -rf /var/lib/apt/lists/*
