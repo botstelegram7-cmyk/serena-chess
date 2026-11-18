@@ -20,7 +20,8 @@ RUN apt-get update \
     && test -n "$SF_BIN" || { echo "No stockfish binary found"; exit 1; } \
     && cp "$SF_BIN" /usr/games/stockfish \
     && chmod +x /usr/games/stockfish \
-    && echo "=== Stockfish installed at /usr/games/stockfish ===" \
+    && ln -sf /usr/games/stockfish /usr/local/bin/stockfish \
+    && echo "=== Stockfish installed at /usr/games/stockfish and /usr/local/bin/stockfish ===" \
     && rm -f /tmp/stockfish.tar.gz \
     && rm -rf /tmp/stockfish-* \
     && rm -rf /var/lib/apt/lists/*

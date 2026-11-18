@@ -235,7 +235,22 @@ function dequeue(ws) {
    Spawns a native Stockfish binary and answers "bestmove" for a FEN.
    Missing or unready binaries return 503; the app surfaces the VPS failure
    instead of silently claiming a local-engine move came from Stockfish. */
-const STOCKFISH_BIN = process.env.STOCKFISH_BIN || 'stockfish';
+function resolveStockfishBin() {
+  const candidates = [
+    process.env.STOCKFISH_BIN,
+    '/usr/games/stockfish',
+    '/usr/local/bin/stockfish',
+    'stockfish'
+  ];
+  for (const c of candidates) {
+    if (!c) continue;
+    try {
+      if (fs.existsSync(c) && fs.statSync(c).isFile()) return c;
+    } catch (_) { /* ignore */ }
+  }
+  return 'stockfish'; /* fall back to PATH lookup */
+}
+const STOCKFISH_BIN = resolveStockfishBin();
 let stockfishReady = false;
 
 function stockfishBestMove(fen, color, cb) {
